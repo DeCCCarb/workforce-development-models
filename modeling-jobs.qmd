@@ -1,0 +1,132 @@
+---
+title: "Modeling Jobs"
+format: html
+warning: false
+message: false
+---
+
+```{r}
+library(tidyverse)
+```
+
+
+# Objective:
+
+End goal is to have one data frame that looks something like this:
+
+| county  | year | technology | new_capacity | total_capacity | occupation   | type    | n_jobs |
+|---------|------|------------|--------------|----------------|--------------|---------|--------|
+|   SLO   | 2026 | Utility PV | 1            | 1              | contruction  |direct   | 5      |
+| ...     | ...  |  ...       | ...          | ...            | ...          |  ...    | ...    |
+| Ventura | 2026 | OSW        | 1            | 1              | op and maint |indirect | 100    |
+
+etc.
+
+I imagine this coming together (concat) from many different dataframes: one for each county and technology
+
+# PV model
+
+Start with 1 piece and see if we can build this into a function from there
+
+## Santa Barbara Utility Solar
+
+Values from Eleanor's Tech. Scenarios sheet:
+
+- Ambition: 722 MW by 2045
+- Starting: 111 MW in 2025
+
+First, use compounding interest to calculate yearly capacities:
+
+```{r}
+# Initial values
+initial_capacity <- 111
+final_capacity <- 722
+years <- 20
+
+# Calculate the annual growth rate
+growth_rate <- (final_capacity / initial_capacity)^(1 / years) - 1
+
+# Create variables to store the results
+year <- 2025:2045
+capacity <- numeric(length(year))
+new_capacity <- numeric(length(year))
+
+# Calculate the total capacity for each year
+for (i in 1:length(year)) {
+  capacity[i] <- initial_capacity * (1 + growth_rate)^(year[i] - 2025)
+  if (i == 1) {
+      new_capacity[i] <- capacity[i] - initial_capacity
+  } else {
+      new_capacity[i] <- capacity[i] - capacity[i-1]
+  }
+}
+
+# Create a data frame with the results
+sb_utility_pv <- data.frame(county = "SB", 
+                             year = year, 
+                             technology = "utility solar",
+                             new_capacity = new_capacity,
+                             total_capacity = round(capacity, 2))
+
+# Display the table
+print(sb_utility_pv)
+```
+
+Now we just need to add number of jobs! Let's just say for testing purposes that utility solar requires:
+- 5 FTE construction jobs / MW
+- construction project lasts 3 months
+- 10 annual O&M jobs / MW
+- lifetime of project is 30 years (beyond the scope of our model)  
+
+
+Starting with O&M jobs:
+```{r}
+# O&M direct jobs ---- 
+# Assign variables
+om_direct <- 10
+
+# Add columns occupation, type, and n_jobs
+sb_utility_pv_om_direct <- sb_utility_pv |>
+    mutate(occupation = "O&M",
+           type = "direct",
+           n_jobs = total_capacity * om_direct)
+
+# O&M indirect jobs ---- 
+# Assign variables
+om_indirect <- 5
+
+# Add columns occupation, type, and n_jobs
+sb_utility_pv_om_indirect <- sb_utility_pv |>
+    mutate(occupation = "O&M",
+           type = "indirect",
+           n_jobs = total_capacity * om_indirect)
+
+# O&M induced ----
+# Assign variables
+om_induced <- 2
+
+# Add columns occupation, type, and n_jobs
+sb_utility_pv_om_induced <- sb_utility_pv |>
+    mutate(occupation = "O&M",
+           type = "induced",
+           n_jobs = total_capacity * om_induced)
+
+# Stack 3 together for total SB PV O&M jobs
+sb_utility_pv_om <- rbind(sb_utility_pv_om_direct, sb_utility_pv_om_indirect, sb_utility_pv_om_induced)
+
+print(sb_utility_pv_om)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+# OSW model
