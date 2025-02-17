@@ -16,7 +16,7 @@ End goal is to have one data frame that looks something like this:
 
 | county  | year | technology | new_capacity | total_capacity | occupation   | type    | n_jobs |
 |---------|------|------------|--------------|----------------|--------------|---------|--------|
-|   SLO   | 2026 | Utility PV | 1            | 1              | contruction  |direct   | 5      |
+|   SLO   | 2026 | Utility PV | 1            | 1              | construction |direct   | 5      |
 | ...     | ...  |  ...       | ...          | ...            | ...          |  ...    | ...    |
 | Ventura | 2026 | OSW        | 1            | 1              | op and maint |indirect | 100    |
 
@@ -118,7 +118,218 @@ print(sb_utility_pv_om)
 
 ```
 
+Now, we probably want to repeat for construction jobs, and then stack that on top of this df. Possible to build into a function??
 
+```{r}
+# Function to calculate capacity and jobs for different counties and technologies
+pv_capacity_and_jobs <- function(county, technology, initial_capacity, final_capacity, occupation, direct_jobs, indirect_jobs, induced_jobs) {
+    
+  # Calculate the annual growth rate
+  growth_rate <- (final_capacity / initial_capacity)^(1 / years) - 1
+  
+  # Create variables to store the results
+  year <- 2025:2045
+  capacity <- numeric(length(year))
+  new_capacity <- numeric(length(year))
+  
+  # Calculate the total capacity for each year
+  for (i in 1:length(year)) {
+    capacity[i] <- initial_capacity * (1 + growth_rate)^(year[i] - 2025)
+    if (i == 1) {
+      new_capacity[i] <- capacity[i] - initial_capacity
+    } else {
+      new_capacity[i] <- capacity[i] - capacity[i-1]
+    }
+  }
+  
+  # Create a data frame with the results
+  df <- data.frame(county = county, 
+                   year = year, 
+                   technology = technology,
+                   new_capacity = new_capacity,
+                   total_capacity = round(capacity, 2))
+  
+  # Direct jobs
+  df_direct <- df %>%
+    mutate(occupation = occupation, 
+           type = "direct", 
+           n_jobs = total_capacity * direct_jobs)
+  
+  # Indirect jobs
+  df_indirect <- df %>%
+    mutate(occupation = occupation, 
+           type = "indirect", 
+           n_jobs = total_capacity * indirect_jobs)
+  
+  # Induced jobs
+  df_induced <- df %>%
+    mutate(occupation = occupation, 
+           type = "induced", 
+           n_jobs = total_capacity * induced_jobs)
+  
+  # Stack them together for total jobs
+  df_final <- rbind(df_direct, df_indirect, df_induced)
+  
+  return(df_final)
+}
+
+```
+
+```{r}
+# Utility PV
+sb_utility_pv_om <- pv_capacity_and_jobs(
+  county = "SB", 
+  technology = "Utility PV", 
+  initial_capacity = 111, 
+  final_capacity = 722, 
+  occupation = "O&M", 
+  direct_jobs = 10, 
+  indirect_jobs = 5, 
+  induced_jobs = 2
+)
+
+sb_utility_pv_const <- pv_capacity_and_jobs(
+  county = "SB", 
+  technology = "Utility PV", 
+  initial_capacity = 111, 
+  final_capacity = 722, 
+  occupation = "Construction", 
+  direct_jobs = 5, 
+  indirect_jobs = 3, 
+  induced_jobs = 1
+)
+
+slo_utility_pv_om <- pv_capacity_and_jobs(
+  county = "SLO", 
+  technology = "Utility PV", 
+  initial_capacity = 50, 
+  final_capacity = 1000, 
+  occupation = "O&M", 
+  direct_jobs = 10, 
+  indirect_jobs = 5, 
+  induced_jobs = 2
+)
+
+slo_utility_pv_const <- pv_capacity_and_jobs(
+  county = "SLO", 
+  technology = "Utility PV", 
+  initial_capacity = 50, 
+  final_capacity = 1000, 
+  occupation = "Construction", 
+  direct_jobs = 10, 
+  indirect_jobs = 5, 
+  induced_jobs = 2
+)
+
+ventura_utility_pv_om <- pv_capacity_and_jobs(
+  county = "V", 
+  technology = "Utility PV", 
+  initial_capacity = 400, 
+  final_capacity = 900, 
+  occupation = "O&M", 
+  direct_jobs = 10, 
+  indirect_jobs = 5, 
+  induced_jobs = 2
+)
+
+ventura_utility_pv_const <- pv_capacity_and_jobs(
+  county = "V", 
+  technology = "Utility PV", 
+  initial_capacity = 400, 
+  final_capacity = 900, 
+  occupation = "Construction", 
+  direct_jobs = 10, 
+  indirect_jobs = 5, 
+  induced_jobs = 2
+)
+
+
+# Rooftop PV
+sb_roof_pv_om <- pv_capacity_and_jobs(
+  county = "SB", 
+  technology = "Rooftop PV", 
+  initial_capacity = 111, 
+  final_capacity = 2000, 
+  occupation = "O&M", 
+  direct_jobs = 10, 
+  indirect_jobs = 5, 
+  induced_jobs = 2
+)
+
+sb_roof_pv_const <- pv_capacity_and_jobs(
+  county = "SB", 
+  technology = "Rooftop PV", 
+  initial_capacity = 111, 
+  final_capacity = 2000, 
+  occupation = "Construction", 
+  direct_jobs = 5, 
+  indirect_jobs = 3, 
+  induced_jobs = 1
+)
+
+slo_roof_pv_om <- pv_capacity_and_jobs(
+  county = "SLO", 
+  technology = "Rooftop PV", 
+  initial_capacity = 25, 
+  final_capacity = 300, 
+  occupation = "O&M", 
+  direct_jobs = 10, 
+  indirect_jobs = 5, 
+  induced_jobs = 2
+)
+
+slo_roof_pv_const <- pv_capacity_and_jobs(
+  county = "SLO", 
+  technology = "Rooftop PV", 
+  initial_capacity = 25, 
+  final_capacity = 300, 
+  occupation = "Construction", 
+  direct_jobs = 10, 
+  indirect_jobs = 5, 
+  induced_jobs = 2
+)
+
+ventura_roof_pv_om <- pv_capacity_and_jobs(
+  county = "V", 
+  technology = "Rooftop PV", 
+  initial_capacity = 29, 
+  final_capacity = 150, 
+  occupation = "O&M", 
+  direct_jobs = 10, 
+  indirect_jobs = 5, 
+  induced_jobs = 2
+)
+
+ventura_roof_pv_const <- pv_capacity_and_jobs(
+  county = "V", 
+  technology = "Rooftop PV", 
+  initial_capacity = 29, 
+  final_capacity = 150, 
+  occupation = "Construction", 
+  direct_jobs = 10, 
+  indirect_jobs = 5, 
+  induced_jobs = 2
+)
+
+
+
+# Combine all counties and technologies
+pv_all <- rbind(sb_utility_pv_om, sb_utility_pv_const, slo_utility_pv_om, slo_utility_pv_const, ventura_utility_pv_om, ventura_utility_pv_const,
+                sb_roof_pv_om, sb_roof_pv_const, slo_roof_pv_om, slo_roof_pv_const, ventura_roof_pv_om, ventura_roof_pv_const)
+```
+
+```{r}
+pv_all |>
+    filter(occupation == "Construction" &
+           county == "V" &
+           technology == "Utility PV") |>
+    ggplot(aes(x = year, y = n_jobs, color = type)) +
+    geom_line()
+```
+
+```{r}
+
+```
 
 
 
