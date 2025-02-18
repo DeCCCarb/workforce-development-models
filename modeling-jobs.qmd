@@ -486,7 +486,6 @@ for (i in seq_along(new_capacity)) {
     }
 }
 
-
 osw_df <- tibble(
     Year = 2026:2045,
     `New Jobs This Year` = new_jobs,
