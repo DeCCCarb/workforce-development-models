@@ -3,6 +3,8 @@ title: "Modeling Jobs"
 format: html
 warning: false
 message: false
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r}
@@ -350,7 +352,7 @@ ventura_roof_pv_const <- pv_const_capacity_and_jobs(
   technology = "Rooftop PV",
   initial_capacity = 29,
   final_capacity = 150,
-  direct_jobs = 10,
+  direct_jobs = 80,
   indirect_jobs = 5,
   induced_jobs = 2
 )
@@ -366,14 +368,33 @@ NEED TO ADD IN ABMITION SCENARIOS! Make a new column with ambition = high or low
 
 
 
-```{r}
-pv_all |>
+```{r, fig.height= 6, fig.width= 8}
+pv_all_plot <- pv_all |>
     filter(type == "direct" &
            county == "V" &
-           technology == "Utility PV") |>
-    ggplot(aes(x = year, y = n_jobs, color = occupation)) +
-    geom_line() +
-    labs(title = "Construction vs O&M Utility Solar Jobs in Ventura County")
+           technology == "Utility PV") 
+
+
+pv_all_plot1 <- ggplot(pv_all_plot) +
+    theme_minimal() +
+    geom_line(aes(x = year, y = n_jobs, color = occupation), size = 1.25)+
+    scale_color_manual(values = c("Construction" = '#4a4e69', "O&M" = '#9a8c98'))+ 
+    #scale_x_continuous(expand = c(0, 0), breaks = scales::pretty_breaks()) +  # Remove space on x-axis
+ # scale_y_continuous(expand = c(0, 0), breaks = scales::pretty_breaks()) +   # Remove space on y-axis 
+    theme(plot.background = element_rect(color = "black", fill = NA, size = 1),
+          legend.text = element_blank(),
+            axis.text.x = element_text(size = 16),  # Rotate x-axis labels
+    axis.text.y = element_text(size = 16), 
+          legend.position = 'none')+
+    labs(x = NULL,
+         y= NULL)
+
+
+pv_all_plot1
+
+
+ggsave('pv_all_plot.png', pv_all_plot1, width = 8, height = 6)
+
 ```
 
 
@@ -494,6 +515,14 @@ osw_df <- tibble(
 )
 
 print(osw_df)
+```
+```{r}
+ggplot(osw_df, aes(x = Year, y = new_jobs)) +
+    geom_point() +
+    labs(x = 'Year',
+         y = 'Total Capacity (GW)',
+         title = 'High Ambition Offshore Wind Energy Targets') +
+    theme_minimal()
 ```
 
 

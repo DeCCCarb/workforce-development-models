@@ -42,7 +42,7 @@ tm_shape(california_counties) +
  tm_layout(frame = FALSE,
             main.title = " ",
             main.title.position = "center",
-            bg.color = "#E8EEEB",
+            bg.color = "#edf1efff",
             fontfamily = "serif") +
     tm_legend(show = FALSE)
 
