@@ -399,130 +399,134 @@ ggsave('pv_all_plot.png', pv_all_plot1, width = 8, height = 6)
 
 
 
-
-
-
-
-
-
-
-
 # OSW model
 
-# High ambition scenario - capacity projections per year 
+## High ambition
 
+For the tri-county central coast JEDI run, we have:
+
+Construction:
+- direct: 1452
+- indirect: 4313
+- induced: 1179
+
+O&M:
+- direct: 140
+- indirect: 112
+- induced: 136
+
+All in FTE jobs per GIGAWATT (JEDI would not let me run for 1 MW of OSW)
+
+Remember that construction jobs will need to be / 5, and o&m jobs are annual.
+
+
+Starting with direct construction jobs:
 ```{r}
+# Create data frame, just adding year for now ----
+year = 2025:2045
+cap_table <- data.frame(
+    year = year
+)
+
+# Ramping up total capacity from 3GW in 2030 to 15GW in 2045 ----
 # Initial values
-initial_capacity <- 5
-final_capacity <- 25
+initial_capacity <- 3
+final_capacity <- 15
 years <- 15
 
-# Calculate the annual growth rate
+# Calculate the annual growth rate ----
 growth_rate <- (final_capacity / initial_capacity)^(1 / years) - 1
 
-# Create a data frame to store the results
-year <- 2030:2045
-capacity <- numeric(length(year))
-new_capacity <- numeric(length(year))
+# Add total capacity for each year into empty list ----
+total_capacity <- numeric(length(year))
 
-# Calculate the total capacity for each year
-for (i in 1:length(year)) {
-  capacity[i] <- initial_capacity * (1 + growth_rate)^(year[i] - 2030)
-  if (i == 1) {
-      new_capacity[i] <- capacity[i] - initial_capacity
-  } else {
-      new_capacity[i] <- capacity[i] - capacity[i-1]
-  }
-}
+for (i in 6:length(cap_table$year)) {
+  total_capacity[i] <- initial_capacity * (1 + growth_rate)^(year[i] - 2030)
+}  
+  
+# Add total capacity into df ----
+cap_table$total_capacity <- total_capacity
 
-# Create a data frame to display the results
-capacity_table <- data.frame(year = year, total_capacity = round(capacity, 2), new_capacity = new_capacity, growth_rate = growth_rate)
+# Add new capacity by the year construction starts ----
+cap_table <- cap_table %>%
+  mutate(
+    new_construction_capacity = lead(total_capacity, 4) - lead(total_capacity, 3)
+  )
 
-# Display the table
-print(capacity_table)
-```
+# Fill NAs with 0 ----
+cap_table$new_construction_capacity[is.na(cap_table$new_construction_capacity)] <- 0
 
-
-```{r}
-constant <- 10 # jobs/gw year = JEDI construction output/5
-
-library(tibble)
-
+# Add direct construction jobs ----
+osw <- cap_table
+osw$occupation = "construction"
+osw$type = "direct"
 
 # Initialize jobs/per GW Year that will be multiplied by capacity each year
-variable_jobs <- 10 # Total construction jobs outputted by JEDI / 5 Years
+jobs_gw_year <- 1452/5 # Total construction jobs outputted by JEDI / 5 Years
+# New jobs each year
+osw$new_jobs <- jobs_gw_year * osw$new_construction_capacity
 
-# inti
-new_jobs <- numeric(length(new_capacity))
-
-total_jobs <- 0
-for (i in seq_along(new_capacity)) {
-    if (i <=5 ) {
-        new_jobs[i] <- sum(new_capacity[1:i] * variable_jobs)  # Accumulate until year 6
-    } else {
-        start_index <- i - 4  # Use only the past 4 years + current year from year 6 onwards
-        new_jobs[i] <- sum(new_capacity[start_index:i] * variable_jobs)
-    }
-}
-
-# Create a tibble with years from 2026 to 2045
-osw_df <- tibble(
-    Year = 2025:2045,
-    `New Jobs This Year` = NA_real_,  # Placeholder for future data entry
-    `New Capacity` = 1:(2045-2025+1),  # Placeholder for future capacities, increment the capacity by howeve rmany
-    `Total Jobs` = NA_real_  # Placeholder for future data entry
-)
-
-print(osw_df)
-
-
-
-
-
+# Total jobs ---- 
+osw$total_jobs <- zoo::rollapply(osw$new_jobs, width = 5, FUN = sum, align = "right", partial = TRUE)
 ```
 
 ```{r}
-# Initialize jobs/per GW Year that will be multiplied by capacity each year
-variable_jobs <- 10 # Total construction jobs outputted by JEDI / 5 Years
-
-# Create a tibble with years from 2026 to 2045
-new_capacity <- 1:(2045-2026+1)  # Increment by 1 per year
-new_jobs <- numeric(length(new_capacity))
-
-total_jobs <- 0
-
-for (i in seq_along(new_capacity)) {
-        new_jobs[i] <- (new_capacity[i] * variable_jobs)
-}
-    
-
-for (i in seq_along(new_capacity)) {
-    if (i == 1) {
-        total_jobs[i] <- new_jobs[i]  # find new jobs at year 1
-    }else if (i <= 5) {
-        total_jobs[i] <- total_jobs[i-1] + (new_capacity[i] * variable_jobs)
-       # total_jobs[i] <- (new_capacity[i] * variable_jobs) + sum(new_jobs[1:i])  # Accumulate until year 6
-    }else {
-        total_jobs[i] <- (new_capacity[i] * variable_jobs) + sum(new_jobs[(i-4):(i-1)])  # Add current and previous 4 years' new jobs
-    }
-}
-
-osw_df <- tibble(
-    Year = 2026:2045,
-    `New Jobs This Year` = new_jobs,
-    `New Capacity` = new_capacity,
-    `Total Jobs` = total_jobs  # Placeholder for future data entry
-)
-
-print(osw_df)
+ggplot(osw) +
+    geom_line(aes(x = year, y = total_capacity)) +
+    geom_line(aes(x = year, y = new_construction_capacity))
 ```
+
+
 ```{r}
-ggplot(osw_df, aes(x = Year, y = new_jobs)) +
-    geom_point() +
-    labs(x = 'Year',
-         y = 'Total Capacity (GW)',
-         title = 'High Ambition Offshore Wind Energy Targets') +
-    theme_minimal()
+ggplot(osw) +
+    geom_col(aes(x = year, y = total_jobs)) +
+    labs(title = "Projected direct construction jobs in CCC from OSW development",
+         y = "FTE Jobs") +
+    scale_y_continuous(labels = scales::label_comma()) +
+    theme_minimal() +
+    theme(
+        axis.title.x = element_blank()
+    )
 ```
+
+
+SWEET! Now we have direct construction jobs each year from 2025 - 2045. We can reuse this code to get indirect and induced jobs. 
+
+Now, I want to try and do O&M jobs. This will be easier, since O&M is just multiplied straight across with total capacity
+
+```{r}
+# Add direct o&m jobs ----
+osw_om_direct <- cap_table
+osw_om_direct$occupation = "operations and maintenance"
+osw_om_direct$type = "direct"
+
+# Initialize jobs/per GW Year that will be multiplied total capacity
+om_jobs_gw_year <- 140 # 140 annual o&m jobs / GW
+
+# New jobs
+osw_om_direct$new_jobs <- NA
+
+# Total jobs
+osw_om_direct$total_jobs <- om_jobs_gw_year * osw_om_direct$total_capacity
+
+# combine into main osw df
+osw <- rbind(osw, osw_om_direct)
+```
+
+```{r}
+ggplot(osw) +
+    geom_col(aes(x = year, y = total_jobs, fill = occupation),
+             position = "dodge") +
+    labs(title = "Projected direct jobs in CCC from OSW development",
+         y = "FTE Jobs") +
+    scale_y_continuous(labels = scales::label_comma()) +
+    scale_fill_manual(values = c("darkorange3", "darkgreen")) +
+    theme_minimal() +
+    theme(
+        axis.title.x = element_blank()
+    )
+```
+
+Horray! In the future, we can go back and add indirect and induced for both occupations. Also maybe add a new row for ambition high or low and include both in one df?
 
 
