@@ -512,7 +512,7 @@ osw_df <- tibble(
     `New Jobs This Year` = new_jobs,
     `New Capacity` = new_capacity,
     `Total Jobs` = total_jobs  # Placeholder for future data entry
-)
+) 
 
 print(osw_df)
 ```
@@ -520,9 +520,14 @@ print(osw_df)
 ggplot(osw_df, aes(x = Year, y = new_jobs)) +
     geom_point() +
     labs(x = 'Year',
-         y = 'Total Capacity (GW)',
+         y = 'Construction Jobs',
          title = 'High Ambition Offshore Wind Energy Targets') +
     theme_minimal()
 ```
+
+```{r}
+
+```
+
 
 
