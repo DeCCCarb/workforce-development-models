@@ -1,0 +1,29 @@
+---
+title: "Phase Timelines"
+format: html
+editor: visual
+---
+
+```{r}
+library(tidyverse)
+
+projects2 <- data.frame(
+  Project = c(1, NA, NA, NA, NA, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5),
+  year = c(NA, NA, NA, NA, NA, 2025, 2026, 2027, 2028, 2029, 2030, NA, NA, 2034, 2049),
+  phase = c("construction", "construction", "construction", "construction", 
+            "construction", "construction", "operations", "construction", 
+            "operations", "construction", "operations", "construction", 
+            "operations", "construction", "operations"),
+  start_year = c(NA, NA, NA, NA, NA, 2025, 2030, 2026, 2031, 2027, 2032, 2028, 2033, 2029, 2034),
+  end_year = c(2025, 2030, 2031, 2032, 2033, 2030, 2045, 2031, 2046, 2032, 2047, 2033, 2048, 2034, 2049)
+)
+
+ggplot(projects2) +
+  geom_segment(aes(x = start_year, xend = end_year, y = Project, yend = Project, color = phase), size = 2) +
+  geom_point( aes(x=start_year, y=Project), size=3 ) +
+  geom_point( aes(x=end_year, y=Project), size=3 ) +
+  labs(title = "Project Phases Timeline", x = "Year", y = "Project") +
+  theme_minimal() +
+  scale_color_manual(values = c("construction" = "blue", "operations" = "green"))
+```
+
