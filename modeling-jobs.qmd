@@ -4,7 +4,7 @@ format: html
 warning: false
 message: false
 editor_options: 
-  chunk_output_type: console
+  chunk_output_type: inline
 ---
 
 ```{r}
@@ -395,7 +395,48 @@ pv_all_plot1
 
 ggsave('pv_all_plot.png', pv_all_plot1, width = 8, height = 6)
 
+
+
+
 ```
+```{r}
+# Brooke: testing out Ranjit's idea for annual capacity plot ----
+
+# Adjust dataframe to only show total
+pv_total_cap <- pv_all |>
+    filter(type == "direct" &
+           county == "V" &
+           technology == "Utility PV") |> 
+    select(!new_capacity)
+
+# Adjust df to only show annual
+pv_annual_cap <-  pv_all |>
+    filter(type == "direct" &
+           county == "V" &
+           technology == "Utility PV") |> 
+    select(!total_capacity)
+
+
+# Realized plot is showing jobs not capacity trajectory.. wanted to make a line for total with incremental bar plots for additional
+ggplot() +
+    theme_minimal() +
+    geom_line(data = pv_total_cap, aes(x = year, y = total_capacity), size = 1.25)+
+   # scale_color_manual(values = c("Construction" = '#4a4e69', "O&M" = '#9a8c98')) + 
+    geom_col(data = pv_annual_cap, aes(x = year, y = new_capacity), size = 1.25) +
+   scale_fill_binned('GnBu') +
+    #scale_x_continuous(expand = c(0, 0), breaks = scales::pretty_breaks()) +  # Remove space on x-axis
+ # scale_y_continuous(expand = c(0, 0), breaks = scales::pretty_breaks()) +   # Remove space on y-axis 
+    theme(plot.background = element_rect(color = "black", fill = NA, size = 1),
+          legend.text = element_blank(),
+            axis.text.x = element_text(size = 16),  # Rotate x-axis labels
+    axis.text.y = element_text(size = 16), 
+          legend.position = 'none')+
+    labs(x = NULL,
+         y= 'Megawatt (MW)')
+```
+ 
+```{r}
+
 
 
 
