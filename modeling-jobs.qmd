@@ -123,7 +123,7 @@ print(sb_utility_pv_om)
 Nice. Let's build this into a function, starting with a function for O&M jobs:
 ```{r}
 # Function to calculate capacity and jobs for PV O&M
-pv_om_capacity_and_jobs <- function(county, technology, initial_capacity, final_capacity, direct_jobs, indirect_jobs, induced_jobs) {
+pv_om_capacity_and_jobs <- function(county, years, technology, initial_capacity, final_capacity, direct_jobs, indirect_jobs, induced_jobs) {
     
   # Calculate the annual growth rate
   growth_rate <- (final_capacity / initial_capacity)^(1 / years) - 1
@@ -180,7 +180,7 @@ pv_om_capacity_and_jobs <- function(county, technology, initial_capacity, final_
 And then a function for Construction jobs
 ```{r}
 # Function to calculate capacity and jobs for PV Construction
-pv_const_capacity_and_jobs <- function(county, technology, initial_capacity, final_capacity, direct_jobs, indirect_jobs, induced_jobs) {
+pv_const_capacity_and_jobs <- function(county, years, technology, initial_capacity, final_capacity, direct_jobs, indirect_jobs, induced_jobs) {
     
   # Calculate the annual growth rate
   growth_rate <- (final_capacity / initial_capacity)^(1 / years) - 1
@@ -190,6 +190,8 @@ pv_const_capacity_and_jobs <- function(county, technology, initial_capacity, fin
   capacity <- numeric(length(year))
   new_capacity <- numeric(length(year))
   
+  
+  # total_capacity[i] <- initial_capacity * (1 + growth_rate)^(year[i] - 2030)
   # Calculate the total capacity for each year
   for (i in 1:length(year)) {
     capacity[i] <- initial_capacity * (1 + growth_rate)^(year[i] - 2025)
@@ -238,166 +240,453 @@ Let's use the functions for each county and occupation
 sb_utility_pv_om <- pv_om_capacity_and_jobs(
   county = "SB", 
   technology = "Utility PV", 
-  initial_capacity = 111, 
-  final_capacity = 722, 
-  direct_jobs = 10, 
-  indirect_jobs = 5, 
-  induced_jobs = 2
+  years = 20,
+  initial_capacity = 110.8566193, 
+  final_capacity = 722.0797068, 
+  direct_jobs = 0.2, 
+  indirect_jobs = 0, 
+  induced_jobs = 0
 )
 
 sb_utility_pv_const <- pv_const_capacity_and_jobs(
   county = "SB",
+  years = 20,
   technology = "Utility PV",
-  initial_capacity = 111,
-  final_capacity = 722,
-  direct_jobs = 5,
-  indirect_jobs = 3,
-  induced_jobs = 1
+  initial_capacity = 110.8566193,
+  final_capacity = 722.0797068,
+  direct_jobs = 1.6,
+  indirect_jobs = 0.6,
+  induced_jobs = 0.4
 )
 
 slo_utility_pv_om <- pv_om_capacity_and_jobs(
   county = "SLO", 
+  years = 20,
   technology = "Utility PV", 
-  initial_capacity = 50, 
-  final_capacity = 1000, 
-  direct_jobs = 10, 
-  indirect_jobs = 5, 
-  induced_jobs = 2
+  initial_capacity = 1615.819209, 
+  final_capacity = 10524.85876, 
+  direct_jobs = 0.2, 
+  indirect_jobs = 0, 
+  induced_jobs = 0
 )
 
 slo_utility_pv_const <- pv_const_capacity_and_jobs(
   county = "SLO",
+  years = 20,
   technology = "Utility PV",
-  initial_capacity = 50,
-  final_capacity = 1000,
-  direct_jobs = 10,
-  indirect_jobs = 5,
-  induced_jobs = 2
+  initial_capacity = 1615.819209,
+  final_capacity = 10524.85876,
+  direct_jobs = 1.6,
+  indirect_jobs = 0.7,
+  induced_jobs = 0.3
 )
 
 ventura_utility_pv_om <- pv_om_capacity_and_jobs(
   county = "V", 
+  years = 20,
   technology = "Utility PV", 
-  initial_capacity = 400, 
-  final_capacity = 900, 
-  direct_jobs = 10, 
-  indirect_jobs = 5, 
-  induced_jobs = 2
+  initial_capacity = 6.71858299, 
+  final_capacity = 43.76240647, 
+  direct_jobs = 0.2, 
+  indirect_jobs = 0, 
+  induced_jobs = 0
 )
 
 ventura_utility_pv_const <- pv_const_capacity_and_jobs(
   county = "V",
+  years = 20,
   technology = "Utility PV",
-  initial_capacity = 400,
-  final_capacity = 900,
-  direct_jobs = 10,
-  indirect_jobs = 5,
-  induced_jobs = 2
+  initial_capacity = 6.71858299, 
+  final_capacity = 43.76240647, 
+  direct_jobs = 1.6,
+  indirect_jobs = 0.6,
+  induced_jobs = 0.4
 )
 
 
 # Rooftop PV
 sb_roof_pv_om <- pv_om_capacity_and_jobs(
   county = "SB", 
+  years = 20,
   technology = "Rooftop PV", 
-  initial_capacity = 111, 
-  final_capacity = 2000, 
-  direct_jobs = 10, 
-  indirect_jobs = 5, 
-  induced_jobs = 2
+  initial_capacity = 242.0159119, 
+  final_capacity = 1293.941196, 
+  direct_jobs = 0.3, 
+  indirect_jobs = 0, 
+  induced_jobs = 0
 )
 
 sb_roof_pv_const <- pv_const_capacity_and_jobs(
   county = "SB",
+  years = 20,
   technology = "Rooftop PV",
-  initial_capacity = 111,
-  final_capacity = 2000,
-  direct_jobs = 5,
-  indirect_jobs = 3,
-  induced_jobs = 1
+  initial_capacity = 242.0159119,
+  final_capacity = 1293.941196,
+  direct_jobs = 5.9,
+  indirect_jobs = 4.7,
+  induced_jobs = 2.5
 )
 
 slo_roof_pv_om <- pv_om_capacity_and_jobs(
   county = "SLO", 
+  years = 20,
   technology = "Rooftop PV", 
-  initial_capacity = 25, 
-  final_capacity = 300, 
-  direct_jobs = 10, 
-  indirect_jobs = 5, 
-  induced_jobs = 2
+  initial_capacity = 344.8405982, 
+  final_capacity = 1843.694708, 
+  direct_jobs = 0.3, 
+  indirect_jobs = 0, 
+  induced_jobs = 0
 )
 
 slo_roof_pv_const <- pv_const_capacity_and_jobs(
   county = "SLO",
+  years = 20,
   technology = "Rooftop PV",
-  initial_capacity = 25,
-  final_capacity = 300,
-  direct_jobs = 10,
-  indirect_jobs = 5,
-  induced_jobs = 2
+  initial_capacity = 344.8405982,
+  final_capacity = 1843.694708,
+  direct_jobs = 6.2,
+  indirect_jobs = 5.4,
+  induced_jobs = 2.3
 )
 
 ventura_roof_pv_om <- pv_om_capacity_and_jobs(
   county = "V", 
+  years = 20,
   technology = "Rooftop PV", 
-  initial_capacity = 29, 
-  final_capacity = 150, 
-  direct_jobs = 10, 
-  indirect_jobs = 5, 
-  induced_jobs = 2
+  initial_capacity = 424.1984954, 
+  final_capacity = 3026.377541, 
+  direct_jobs = 0.3, 
+  indirect_jobs = 0, 
+  induced_jobs = 0
 )
 
 ventura_roof_pv_const <- pv_const_capacity_and_jobs(
   county = "V",
+  years = 20,
   technology = "Rooftop PV",
-  initial_capacity = 29,
-  final_capacity = 150,
-  direct_jobs = 80,
-  indirect_jobs = 5,
-  induced_jobs = 2
+  initial_capacity = 424.1984954,
+  final_capacity = 3026.377541,
+  direct_jobs = 6.2,
+  indirect_jobs = 4.7,
+  induced_jobs = 2.5
+)
+
+# Commercial PV
+sb_comm_pv_om <- pv_om_capacity_and_jobs(
+  county = "SB", 
+  years = 20,
+  technology = "Commercial PV", 
+  initial_capacity = 242.0159119, 
+  final_capacity = 1293.941196, 
+  direct_jobs = 0.2, 
+  indirect_jobs = 0, 
+  induced_jobs = 0
+)
+
+sb_comm_pv_const <- pv_const_capacity_and_jobs(
+  county = "SB",
+  years = 20,
+  technology = "Commercial PV",
+  initial_capacity = 242.0159119,
+  final_capacity = 1293.941196,
+  direct_jobs = 3.1,
+  indirect_jobs = 2.9,
+  induced_jobs = 1.5
+)
+
+slo_comm_pv_om <- pv_om_capacity_and_jobs(
+  county = "SLO", 
+  years = 20,
+  technology = "Commercial PV", 
+  initial_capacity = 344.8405982, 
+  final_capacity = 1843.694708, 
+  direct_jobs = 0.2, 
+  indirect_jobs = 0, 
+  induced_jobs = 0
+)
+
+slo_comm_pv_const <- pv_const_capacity_and_jobs(
+  county = "SLO",
+  years = 20,
+  technology = "Commercial PV",
+  initial_capacity = 344.8405982,
+  final_capacity = 1843.694708,
+  direct_jobs = 3.3,
+  indirect_jobs = 3.3,
+  induced_jobs = 1.3
+)
+
+ventura_comm_pv_om <- pv_om_capacity_and_jobs(
+  county = "V", 
+  years = 20,
+  technology = "Commercial PV", 
+  initial_capacity = 566.0469908, 
+  final_capacity = 3026.377541, 
+  direct_jobs = 0.2, 
+  indirect_jobs = 0, 
+  induced_jobs = 0
+)
+
+ventura_comm_pv_const <- pv_const_capacity_and_jobs(
+  county = "V",
+  years = 20,
+  technology = "Commercial PV",
+  initial_capacity = 566.0469908,
+  final_capacity = 3026.377541,
+  direct_jobs = 3.3,
+  indirect_jobs = 2.9,
+  induced_jobs = 1.4
 )
 
 
-
-# Combine all counties and technologies
+# Combine all counties and technologies --> for our purposes, we'll keep rooftop as residential, and add in commercial
 pv_all <- rbind(sb_utility_pv_om, sb_utility_pv_const, slo_utility_pv_om, slo_utility_pv_const, ventura_utility_pv_om, ventura_utility_pv_const,
-                sb_roof_pv_om, sb_roof_pv_const, slo_roof_pv_om, slo_roof_pv_const, ventura_roof_pv_om, ventura_roof_pv_const)
+                sb_roof_pv_om, sb_roof_pv_const, slo_roof_pv_om, slo_roof_pv_const, ventura_roof_pv_om, ventura_roof_pv_const, sb_comm_pv_om,
+                sb_comm_pv_const, slo_comm_pv_om, slo_comm_pv_const, ventura_comm_pv_om, ventura_comm_pv_const)
 ```
 
 NEED TO ADD IN ABMITION SCENARIOS! Make a new column with ambition = high or low.
 
-
+Base plot to refer back to, using Ventura utility as an example
 
 ```{r, fig.height= 6, fig.width= 8}
-pv_all_plot <- pv_all |>
+pv_v_plot <- pv_all |>
     filter(type == "direct" &
            county == "V" &
            technology == "Utility PV") 
 
 
-pv_all_plot1 <- ggplot(pv_all_plot) +
+pv_all_plot1 <- ggplot(pv_v_plot) +
     theme_minimal() +
-    geom_line(aes(x = year, y = n_jobs, color = occupation), size = 1.25)+
+    geom_bar(aes(x = year, y = n_jobs, color = occupation), size = 1.25, position = "stack", stat="identity")+
     scale_color_manual(values = c("Construction" = '#4a4e69', "O&M" = '#9a8c98'))+ 
+    #scale_x_continuous(expand = c(0, 0), breaks = scales::pretty_breaks()) +  # Remove space on x-axis
+ # scale_y_continuous(expand = c(0, 0), breaks = scales::pretty_breaks()) +   # Remove space on y-axis 
+    # theme(plot.background = element_rect(color = "black", fill = NA, size = 1),
+    #       legend.text = element_blank(),
+    #         axis.text.x = element_text(size = 16),  # Rotate x-axis labels
+    # axis.text.y = element_text(size = 16), 
+    #       legend.position = 'none')+
+    labs(x = NULL,
+         y= NULL) +
+    scale_y_continuous(labels = scales::label_comma()) +
+    scale_fill_manual(labels = c("Construction Jobs", "Operations & Maintenance Jobs"),
+                      values = c("#4a4e69", "#9a8c98")) +
+    theme_minimal() +
+    theme(
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 24, margin = margin(5,20,0,10)),
+        axis.text = element_text(size = 20), 
+        legend.title = element_blank(),
+        legend.text = element_text(size = 20),
+        legend.position = "bottom",
+        plot.background = element_rect(fill = "#EFEFEF"),
+        plot.title = element_blank(),
+        panel.grid = element_line(color = "grey85")
+    )
+
+
+pv_all_plot1
+
+
+ggsave('pv_base_plot.png', pv_all_plot1, width = 8, height = 6)
+
+```
+
+Plot of pv capacities
+
+```{r}
+#pv_cap_plot 
+
+pv_capacity_growth_plot_V <- ggplot(ventura_utility_pv_const) +
+    theme_minimal() +
+    geom_line(aes(x = year, y = new_capacity), color = "#9a8c98", lwd = 2) +
+    geom_line(aes(x = year, y = total_capacity), color = "#4a4e69", lwd = 2) +
     #scale_x_continuous(expand = c(0, 0), breaks = scales::pretty_breaks()) +  # Remove space on x-axis
  # scale_y_continuous(expand = c(0, 0), breaks = scales::pretty_breaks()) +   # Remove space on y-axis 
     theme(plot.background = element_rect(color = "black", fill = NA, size = 1),
           legend.text = element_blank(),
             axis.text.x = element_text(size = 16),  # Rotate x-axis labels
     axis.text.y = element_text(size = 16), 
-          legend.position = 'none')+
+          legend.position = 'none') +
     labs(x = NULL,
-         y= NULL)
+         y= "Capacity (GW)") +
+    scale_y_continuous(labels = scales::label_comma()) +
+    scale_fill_manual(labels = c("New capacity", "Total capacity"),
+                      values = c("#4a4e69", "#9a8c98")) +
+    theme_minimal() +
+    theme(
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 24, margin = margin(5,20,0,10)),
+        axis.text = element_text(size = 20), 
+        legend.title = element_blank(),
+        legend.text = element_text(size = 20),
+        legend.position = "bottom",
+        plot.background = element_rect(fill = "#EFEFEF"),
+        plot.title = element_blank(),
+        panel.grid = element_line(color = "grey85")
+    )
 
+ggsave('pv_capacity_growth_plot_V.png', pv_capacity_growth_plot_V, width = 8, height = 6)
+#pv_cap_plot
+```
 
-pv_all_plot1
+Plot of osw capacities
 
+```{r}
+total_cap_line <- osw |>
+    filter(year %in% c(2030:2045))
+annual_cap_line <- osw |>
+    filter(year %in% c(2026:2041))
 
-ggsave('pv_all_plot.png', pv_all_plot1, width = 8, height = 6)
+osw_capacity_growth_plot_faculty_review <- ggplot() +
+    geom_line(data = total_cap_line, 
+              aes(x = year, y = total_capacity),
+              color = "#9a8c98",
+              lwd = 2) +
+    geom_line(data = annual_cap_line, 
+              aes(x = year, y = new_construction_capacity), 
+              color = "#4a4e69",
+              lwd = 2) +
+    scale_x_continuous(limits = c(2025,2045)) +
+    scale_y_continuous(limits = c(0,15),
+                       breaks = c(0,3,5,10,15)) +
+    labs(y = "Capacity (GW)") +
+    theme_minimal() +
+    theme(
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 24, margin = margin(5,20,0,10)),
+        axis.text = element_text(size = 20), 
+        legend.title = element_blank(),
+        legend.text = element_text(size = 20),
+        legend.position = "bottom",
+        plot.background = element_rect(fill = "#EFEFEF"),
+        plot.title = element_blank(),
+        panel.grid = element_line(color = "grey85")
+    )
 
+ggsave("osw_capacity_growth_plot_faculty_review.png",
+       osw_capacity_growth_plot_faculty_review,
+       width = 10,
+       height = 7)
 ```
 
 
+Utility PV in Ventura
+
+```{r, fig.height= 7, fig.width= 10}
+# 2nd plot attempt
+pv_u_v_plot <- pv_all |>
+    filter(type == "direct" &
+           county == "V" &
+           technology == "Utility PV") 
+
+
+pv_u_v_plot <- ggplot(pv_u_v_plot) +
+    theme_minimal() +
+    geom_bar(aes(x = year, y = n_jobs, fill = occupation), size = 1.25, position = "stack", stat="identity")+
+    scale_fill_manual(values = c("Construction" = '#4a4e69', "O&M" = '#9a8c98')) + 
+    labs(x = NULL,
+         y= "FTE jobs",
+         title = "Projected direct jobs in Ventura county from Utility PV development") +
+    scale_y_continuous(labels = scales::label_comma()) +
+    scale_fill_manual(labels = c("Construction Jobs", "Operations & Maintenance Jobs"),
+                      values = c("#4a4e69", "#9a8c98")) +
+    theme_minimal() +
+    theme(
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 24, margin = margin(5,20,0,10)),
+        axis.text = element_text(size = 20), 
+        legend.title = element_blank(),
+        legend.text = element_text(size = 20),
+        legend.position = "bottom",
+        plot.background = element_rect(fill = "#EFEFEF"),
+        plot.title = element_blank(),
+        panel.grid = element_line(color = "grey85")
+    )
+
+
+pv_u_v_plot
+
+
+ggsave('pv_u_v_plot.png', pv_u_v_plot, width = 10, height = 7)
+```
+
+Utility PV in Santa Barbara
+
+```{r, fig.height= 6, fig.width= 8}
+pv_u_sb_plot <- pv_all |>
+    filter(type == "direct" &
+           county == "SB" &
+           technology == "Utility PV") 
+
+
+pv_u_sb_plot1 <- ggplot(pv_u_sb_plot) +
+    theme_minimal() +
+    geom_bar(aes(x = year, y = n_jobs, fill = occupation), size = 1.25, position = "stack", stat="identity")+
+    scale_fill_manual(values = c("Construction" = '#4a4e69', "O&M" = '#9a8c98'))+ 
+    #scale_x_continuous(expand = c(0, 0), breaks = scales::pretty_breaks()) +  # Remove space on x-axis
+ # scale_y_continuous(expand = c(0, 0), breaks = scales::pretty_breaks()) +   # Remove space on y-axis 
+    theme(plot.background = element_rect(color = "black", fill = NA, size = 1),
+          #legend.text = element_blank(),
+            axis.text.x = element_text(size = 16),  # Rotate x-axis labels
+    axis.text.y = element_text(size = 16))+
+    labs(x = NULL,
+         y= "FTE jobs",
+         title = "Projected direct jobs in Santa Barbara county from Utility PV development") +
+    scale_y_continuous(labels = scales::label_comma()) +
+    scale_fill_manual(labels = c("Construction Jobs", "Operations & Maintenance Jobs"),
+                      values = c("#4a4e69", "#9a8c98")) +
+    theme_minimal() +
+    theme(
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 24, margin = margin(5,20,0,10)),
+        axis.text = element_text(size = 20), 
+        legend.title = element_blank(),
+        legend.text = element_text(size = 20),
+        legend.position = "bottom",
+        plot.background = element_rect(fill = "#EFEFEF"),
+        plot.title = element_blank(),
+        panel.grid = element_line(color = "grey85")
+    )
+
+
+
+pv_u_sb_plot1
+
+
+ggsave('pv_u_sb_plot.png', pv_all_plot1, width = 8, height = 6)
+```
+
+Utility PV in San Luis Obispo
+
+```{r, fig.height= 6, fig.width= 8}
+pv_u_slo_plot <- pv_all |>
+    filter(type == "direct" &
+           county == "SLO" &
+           technology == "Utility PV") 
+
+
+pv_u_slo_plot1 <- ggplot(pv_u_slo_plot) +
+    theme_minimal() +
+    geom_bar(aes(x = year, y = n_jobs, fill = occupation), size = 1.25, position = "stack", stat="identity")+
+    scale_fill_manual(values = c("Construction" = '#4a4e69', "O&M" = '#9a8c98'))+ 
+    #scale_x_continuous(expand = c(0, 0), breaks = scales::pretty_breaks()) +  # Remove space on x-axis
+ # scale_y_continuous(expand = c(0, 0), breaks = scales::pretty_breaks()) +   # Remove space on y-axis 
+    theme(plot.background = element_rect(color = "black", fill = NA, size = 1),
+          #legend.text = element_blank(),
+            axis.text.x = element_text(size = 16),  # Rotate x-axis labels
+    axis.text.y = element_text(size = 16))+
+    labs(x = NULL,
+         y= "FTE jobs",
+         title = "Projected direct jobs in San Luis Obispo county from Utility PV development")
+
+
+pv_u_slo_plot1
+
+
+ggsave('pv_u_slo_plot.png', pv_all_plot1, width = 8, height = 6)
+```
 
 # OSW model
 
@@ -516,11 +805,11 @@ osw <- rbind(osw, osw_om_direct)
 ```{r}
 ggplot(osw) +
     geom_col(aes(x = year, y = total_jobs, fill = occupation),
-             position = "dodge") +
+             position = "stack") +
     labs(title = "Projected direct jobs in CCC from OSW development",
          y = "FTE Jobs") +
     scale_y_continuous(labels = scales::label_comma()) +
-    scale_fill_manual(values = c("darkorange3", "darkgreen")) +
+    scale_fill_manual(values = c("#4a4e69", "#9a8c98")) +
     theme_minimal() +
     theme(
         axis.title.x = element_blank()
