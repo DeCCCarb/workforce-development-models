@@ -9,6 +9,9 @@ editor_options:
 
 ```{r}
 library(tidyverse)
+library(here)
+library(janitor)
+library(stringr)
 ```
 
 
@@ -867,4 +870,15 @@ ggplot(osw) +
 
 Horray! In the future, we can go back and add indirect and induced for both occupations. Also maybe add a new row for ambition high or low and include both in one df?
 
+
+Oil phaseout modeling 
+We're going to start by reading in MSA_ALL_YEARS.csv. This is combined BLS data for fossil fuel and green job occupations.
+
+```{r}
+msa_all_years <- read.csv(here('MSA_ALL_YEARS.csv')) %>% 
+   clean_names() %>% 
+    filter(str_detect(area_title,
+                      regex("Santa Barbara|Ventura|San Luis Obispo",
+                            ignore_case = TRUE)))
+```
 
