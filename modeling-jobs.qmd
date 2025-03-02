@@ -428,9 +428,9 @@ cap_table <- data.frame(
     year = year
 )
 
-# Ramping up total capacity from 3GW in 2030 to 15GW in 2045 ----
+# Ramping up total capacity from 0.5GW in 2030 to 15GW in 2045 ----
 # Initial values
-initial_capacity <- 3
+initial_capacity <- 0.5
 final_capacity <- 15
 years <- 15
 
@@ -471,9 +471,41 @@ osw$total_jobs <- zoo::rollapply(osw$new_jobs, width = 5, FUN = sum, align = "ri
 ```
 
 ```{r}
-ggplot(osw) +
-    geom_line(aes(x = year, y = total_capacity)) +
-    geom_line(aes(x = year, y = new_construction_capacity))
+total_cap_line <- osw |>
+    filter(year %in% c(2030:2045))
+annual_cap_line <- osw |>
+    filter(year %in% c(2026:2041))
+
+osw_capacity_growth_plot_faculty_review <- ggplot() +
+    geom_line(data = total_cap_line, 
+              aes(x = year, y = total_capacity),
+              color = "#9a8c98",
+              lwd = 2) +
+    geom_line(data = annual_cap_line,
+              aes(x = year, y = new_construction_capacity),
+              color = "#4a4e69",
+              lwd = 2) +
+     scale_x_continuous(limits = c(2025,2045)) +
+    # scale_y_continuous(limits = c(0,15),
+    #                    breaks = c(0,5,10,15)) +
+    labs(y = "Capacity (GW)") +
+    theme_minimal() +
+    theme(
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 24, margin = margin(5,20,0,10)),
+        axis.text = element_text(size = 20),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 20),
+        legend.position = "bottom",
+        plot.background = element_rect(fill = "#EFEFEF"),
+        plot.title = element_blank(),
+        panel.grid = element_line(color = "grey85")
+    )
+
+ggsave("osw_capacity_growth_plot_faculty_review.png",
+       osw_capacity_growth_plot_faculty_review,
+       width = 10,
+       height = 7)
 ```
 
 
@@ -520,7 +552,8 @@ ggplot(osw) +
     labs(title = "Projected direct jobs in CCC from OSW development",
          y = "FTE Jobs") +
     scale_y_continuous(labels = scales::label_comma()) +
-    scale_fill_manual(values = c("darkorange3", "darkgreen")) +
+    scale_fill_manual(
+                      values = c("#4a4e69", "#9a8c98")) +
     theme_minimal() +
     theme(
         axis.title.x = element_blank()
@@ -529,4 +562,31 @@ ggplot(osw) +
 
 Horray! In the future, we can go back and add indirect and induced for both occupations. Also maybe add a new row for ambition high or low and include both in one df?
 
+### Playing with plots
+```{r}
+direct_jobs_stacked_bar_faculty_review <- ggplot(osw) +
+    geom_col(aes(x = year, y = total_jobs, fill = occupation)) +
+    labs(title = "Projected direct jobs in CA Central Coast from floating OSW development",
+         y = "FTE Jobs") +
+    scale_y_continuous(labels = scales::label_comma(),
+                       limits = c(0,4000)) +
+    scale_fill_manual(labels = c("Construction Jobs", "Operations & Maintenance Jobs"),
+                      values = c("#4a4e69", "#9a8c98")) +
+    theme_minimal() +
+    theme(
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 24, margin = margin(5,20,0,10)),
+        axis.text = element_text(size = 20), 
+        legend.title = element_blank(),
+        legend.text = element_text(size = 20),
+        legend.position = "bottom",
+        plot.background = element_rect(fill = "#EFEFEF"),
+        plot.title = element_blank(),
+        panel.grid = element_line(color = "grey85")
+    )
+
+ggsave("osw_direct_jobs_stacked_bar_faculty_review.png",
+       direct_jobs_stacked_bar_faculty_review,
+       width = 10, height = 7)
+```
 
