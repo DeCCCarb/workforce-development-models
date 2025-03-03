@@ -461,17 +461,10 @@ pv_v_plot <- pv_all |>
 
 pv_all_plot1 <- ggplot(pv_v_plot) +
     theme_minimal() +
-    geom_bar(aes(x = year, y = n_jobs, color = occupation), size = 1.25, position = "stack", stat="identity")+
-    scale_color_manual(values = c("Construction" = '#4a4e69', "O&M" = '#9a8c98'))+ 
-    #scale_x_continuous(expand = c(0, 0), breaks = scales::pretty_breaks()) +  # Remove space on x-axis
- # scale_y_continuous(expand = c(0, 0), breaks = scales::pretty_breaks()) +   # Remove space on y-axis 
-    # theme(plot.background = element_rect(color = "black", fill = NA, size = 1),
-    #       legend.text = element_blank(),
-    #         axis.text.x = element_text(size = 16),  # Rotate x-axis labels
-    # axis.text.y = element_text(size = 16), 
-    #       legend.position = 'none')+
+    geom_bar(aes(x = year, y = n_jobs, fill = occupation), size = 1.25, position = "stack", stat="identity") +
+    scale_fill_manual(values = c("Construction" = '#4a4e69', "O&M" = '#9a8c98'))+ 
     labs(x = NULL,
-         y= NULL) +
+         y= "FTE jobs") +
     scale_y_continuous(labels = scales::label_comma()) +
     scale_fill_manual(labels = c("Construction Jobs", "Operations & Maintenance Jobs"),
                       values = c("#4a4e69", "#9a8c98")) +
@@ -505,8 +498,6 @@ pv_capacity_growth_plot_V <- ggplot(ventura_utility_pv_const) +
     theme_minimal() +
     geom_line(aes(x = year, y = new_capacity), color = "#9a8c98", lwd = 2) +
     geom_line(aes(x = year, y = total_capacity), color = "#4a4e69", lwd = 2) +
-    #scale_x_continuous(expand = c(0, 0), breaks = scales::pretty_breaks()) +  # Remove space on x-axis
- # scale_y_continuous(expand = c(0, 0), breaks = scales::pretty_breaks()) +   # Remove space on y-axis 
     theme(plot.background = element_rect(color = "black", fill = NA, size = 1),
           legend.text = element_blank(),
             axis.text.x = element_text(size = 16),  # Rotate x-axis labels
@@ -531,7 +522,7 @@ pv_capacity_growth_plot_V <- ggplot(ventura_utility_pv_const) +
     )
 
 ggsave('pv_capacity_growth_plot_V.png', pv_capacity_growth_plot_V, width = 8, height = 6)
-#pv_cap_plot
+pv_capacity_growth_plot_V
 ```
 
 Plot of osw capacities
@@ -824,12 +815,6 @@ ggplot(osw) +
     )
 
 ```
-
-```{r}
-
-```
-
-
 
 SWEET! Now we have direct construction jobs each year from 2025 - 2045. We can reuse this code to get indirect and induced jobs. 
 
