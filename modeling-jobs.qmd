@@ -922,8 +922,12 @@ ggplot(osw) +
 
 Horray! In the future, we can go back and add indirect and induced for both occupations. Also maybe add a new row for ambition high or low and include both in one df?
 
+<<<<<<< HEAD
+Oil phaseout modeling 
+=======
 
 ## Oil phaseout modeling 
+>>>>>>> 04e6b2903f8ace6ee1bbb32c40d20703b304c864
 We're going to start by reading in MSA_ALL_YEARS.csv. This is combined BLS data for fossil fuel and green job occupations.
 
 ```{r}
@@ -974,8 +978,17 @@ msa_ff_final <- msa_ff_grouped %>%
 msa_ff_final %>% 
     group_by(county)
 
-ff_jobs_plot_final <- ggplot(msa_ff_final) +
-    geom_col(aes(x = county, y = total_employed)) +
+msa_reduced <- msa_ff_final %>% 
+    mutate(jobs_50 = total_employed - (total_employed*0.5),
+           jobs_80 = total_employed - (total_employed*0.8))
+
+ff_jobs_plot_final <- ggplot(msa_reduced) +
+    geom_col(aes(x = county, y = total_employed, fill = "Total Employed")) +
+    geom_col(aes(x = county, y = jobs_50, fill = "50% Phaseout")) +
+    geom_col(aes(x = county, y = jobs_80, fill = "80% Phaseout")) +
+    scale_fill_manual(values = c("Total Employed" = "#4a4e69", 
+                                 "50% Phaseout" = "#9a8c98", 
+                                 "80% Phaseout" = "#f0e68c")) +
     theme_minimal() +
     theme(
         axis.title.x = element_blank(),
@@ -991,7 +1004,6 @@ ff_jobs_plot_final <- ggplot(msa_ff_final) +
     labs(x = NULL,
          y = NULL,
          title = "Number of Fossil Fuel Jobs in CC")
-
 ggsave('plots/ff_jobs_plot.png', ff_jobs_plot_final, width = 8, height = 6)
 ```
 
