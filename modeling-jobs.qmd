@@ -756,14 +756,14 @@ ggsave('plots/pv_u_slo_plot.png', pv_all_plot1, width = 8, height = 6)
 For the tri-county central coast JEDI run, we have:
 
 Construction:
-- direct: 1452
-- indirect: 4313
-- induced: 1179
+- direct: 82
+- indirect: 2571
+- induced: 781
 
 O&M:
-- direct: 140
-- indirect: 112
-- induced: 136
+- direct: 127
+- indirect: 126
+- induced: 131
 
 All in FTE jobs per GIGAWATT (JEDI would not let me run for 1 MW of OSW)
 
@@ -812,7 +812,7 @@ osw$occupation = "construction"
 osw$type = "direct"
 
 # Initialize jobs/per GW Year that will be multiplied by capacity each year
-jobs_gw_year <- 1452/5 # Total construction jobs outputted by JEDI / 5 Years
+jobs_gw_year <- 82/5 # Direct construction jobs outputted by JEDI / 5 Years
 # New jobs each year
 osw$new_jobs <- jobs_gw_year * osw$new_construction_capacity
 
@@ -894,7 +894,7 @@ osw_om_direct$occupation = "operations and maintenance"
 osw_om_direct$type = "direct"
 
 # Initialize jobs/per GW Year that will be multiplied total capacity
-om_jobs_gw_year <- 140 # 140 annual o&m jobs / GW
+om_jobs_gw_year <- 127 # 140 annual o&m jobs / GW
 
 # New jobs
 osw_om_direct$new_jobs <- NA
