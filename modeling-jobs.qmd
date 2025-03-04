@@ -948,16 +948,50 @@ msa_ff_grouped <- msa_ff %>%
     summarize(total_employed = sum(tot_emp, na.rm = TRUE))
 ```
 
+Now, let's plot our initial values for fossil fuel jobs in our respective areas. 
 ```{r}
 ff_jobs_plot <- ggplot(msa_ff_grouped) +
     theme_minimal() +
-    geom_col(aes(x = area_title, y = total_employed))+
+    geom_col(aes(x = area_title, y = total_employed)) +
     theme(plot.background = element_rect(color = "black", fill = NA, size = 1),
-          axis.text.x = element_text(angle = 45, hjust = 1))+
+          axis.text.x = element_text(angle = 45, hjust = 1)) +
     labs(x = NULL,
          y= "FF Jobs",
          title = "Number of Fossil Fuel Jobs in CC")
 
-ggsave('plots/ff_jobs_plot.png', ff_jobs_plot, width = 8, height = 6)
+#ggsave('plots/ff_jobs_plot.png', ff_jobs_plot, width = 8, height = 6)
+```
+
+```{r}
+# Create a new column for county grouping
+msa_ff_final <- msa_ff_grouped %>% 
+    mutate(county = case_when(
+        str_detect(area_title, "Ventura") ~ "Ventura",
+        str_detect(area_title, "Santa Barbara") ~ "Santa Barbara",
+        str_detect(area_title, "San Luis Obispo") ~ "San Luis Obispo"
+    ))
+
+msa_ff_final %>% 
+    group_by(county)
+
+ff_jobs_plot_final <- ggplot(msa_ff_final) +
+    geom_col(aes(x = county, y = total_employed)) +
+    theme_minimal() +
+    theme(
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 24, margin = margin(5,20,0,10)),
+        axis.text = element_text(size = 20), 
+        legend.title = element_blank(),
+        legend.text = element_text(size = 20),
+        legend.position = "bottom",
+        plot.background = element_rect(fill = "#EFEFEF"),
+        plot.title = element_blank(),
+        panel.grid = element_line(color = "grey85")
+    ) +
+    labs(x = NULL,
+         y = NULL,
+         title = "Number of Fossil Fuel Jobs in CC")
+
+ggsave('plots/ff_jobs_plot.png', ff_jobs_plot_final, width = 8, height = 6)
 ```
 
