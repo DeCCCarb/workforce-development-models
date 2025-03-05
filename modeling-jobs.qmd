@@ -922,12 +922,10 @@ ggplot(osw) +
 
 Horray! In the future, we can go back and add indirect and induced for both occupations. Also maybe add a new row for ambition high or low and include both in one df?
 
-<<<<<<< HEAD
 Oil phaseout modeling 
 =======
 
 ## Oil phaseout modeling 
->>>>>>> 04e6b2903f8ace6ee1bbb32c40d20703b304c864
 We're going to start by reading in MSA_ALL_YEARS.csv. This is combined BLS data for fossil fuel and green job occupations.
 
 ```{r}
@@ -963,7 +961,8 @@ ff_jobs_plot <- ggplot(msa_ff_grouped) +
          y= "FF Jobs",
          title = "Number of Fossil Fuel Jobs in CC")
 
-#ggsave('plots/ff_jobs_plot.png', ff_jobs_plot, width = 8, height = 6)
+#ggsave('plots/ff_jobs_plot.png', ff_jobs_plot, width = 8, height = 6)\
+ff_jobs_plot
 ```
 
 ```{r}
@@ -980,7 +979,8 @@ msa_ff_final %>%
 
 msa_reduced <- msa_ff_final %>% 
     mutate(jobs_50 = total_employed - (total_employed*0.5),
-           jobs_80 = total_employed - (total_employed*0.8))
+           jobs_80 = total_employed - (total_employed*0.8),
+           all_jobs = total_employed)
 
 ff_jobs_plot_final <- ggplot(msa_reduced) +
     geom_col(aes(x = county, y = total_employed, fill = "Total Employed")) +
@@ -1004,6 +1004,151 @@ ff_jobs_plot_final <- ggplot(msa_reduced) +
     labs(x = NULL,
          y = NULL,
          title = "Number of Fossil Fuel Jobs in CC")
-ggsave('plots/ff_jobs_plot.png', ff_jobs_plot_final, width = 8, height = 6)
+# ggsave('plots/ff_jobs_plot.png', ff_jobs_plot_final, width = 8, height = 6)
+ff_jobs_plot_final
+```
+
+```{r}
+msa_reduced %>% 
+    ggplot() +
+    geom_point(aes(x=year, y=jobs_50_t, color = "lightblue")) +
+    geom_point(aes(x=year, y=jobs_80_t, color = "green")) +
+    geom_point(aes(x=year, y=total_employed, color= "pink")) +
+    facet_wrap(~county)
+```
+
+```{r}
+# Create a data frame for the years from 2025 to 2045
+years <- seq(2025, 2045, by = 1)
+
+# Define the initial and final job numbers for each county (50% phaseout scenario)
+# These numbers are just examples; use your actual starting values (3610 for Ventura in 2025, etc.)
+job_start_ventura <- 3610
+job_end_ventura_50 <- 1805
+job_end_ventura_80 <- 722
+
+job_start_sb <- 1200
+job_end_sb_50 <- 600
+job_end_sb_80 <- 240
+
+    
+job_start_slo <- 280
+job_end_slo_50 <- 140
+job_end_slo_80 <- 56
+
+# Create a function to calculate the linear phaseout jobs for a given county
+calculate_linear_phaseout <- function(start_jobs, end_jobs, years) {
+  slope <- (end_jobs - start_jobs) / (2045 - 2025)
+  jobs_per_year <- start_jobs + slope * (years - 2025)
+  return(jobs_per_year)
+}
+
+
+# Calculate the linear phaseout jobs for each county for 50% phaseout 
+ventura_jobs <- calculate_linear_phaseout(job_start_ventura, job_start_ventura, years)
+sb_jobs <- calculate_linear_phaseout(job_start_sb, job_start_sb, years)
+slo_jobs <- calculate_linear_phaseout(job_start_slo, job_start_slo, years)
+
+# Calculate the linear phaseout jobs for each county for 50% phaseout 
+ventura_jobs_50 <- calculate_linear_phaseout(job_start_ventura, job_end_ventura_50, years)
+sb_jobs_50 <- calculate_linear_phaseout(job_start_sb, job_end_sb_50, years)
+slo_jobs_50 <- calculate_linear_phaseout(job_start_slo, job_end_slo_50, years)
+
+# Calculate the linear phaseout jobs for each county for 80% phaseout 
+ventura_jobs_80 <- calculate_linear_phaseout(job_start_ventura, job_end_ventura_80, years)
+sb_jobs_80 <- calculate_linear_phaseout(job_start_sb, job_end_sb_80, years)
+slo_jobs_80 <- calculate_linear_phaseout(job_start_slo, job_end_slo_80, years)
+
+# Create initial data frame
+df_phaseout <- data.frame(
+  year = rep(years, times = 3),  # Repeat the years for each county
+  county = rep(c("Ventura", "Santa Barbara", "San Luis Obispo"), each = length(years)),
+  jobs = c(ventura_jobs, 
+           sb_jobs,
+           slo_jobs)
+)
+
+# Create a data frame with the results for 50%
+df_phaseout_50 <- data.frame(
+  year = rep(years, times = 3),
+  county = rep(c("Ventura", "Santa Barbara", "San Luis Obispo"), each = length(years)),
+  jobs = c(ventura_jobs_50, 
+           sb_jobs_50,
+           slo_jobs_50)
+)
+
+# Create a data frame with the results for 80%
+df_phaseout_80 <- data.frame(
+  year = rep(years, times = 3),
+  county = rep(c("Ventura", "Santa Barbara", "San Luis Obispo"), each = length(years)),
+  jobs = c(ventura_jobs_80, 
+           sb_jobs_80,
+           slo_jobs_80)
+)
+
+# Plot the linear phaseout for each county
+ff_jobs_50_phaseout_plot <- ggplot(df_phaseout_50, aes(x = year, y = jobs, color = county)) +
+  geom_line(size = 1.5) +
+  scale_color_manual(values = c("Ventura" = "#4a4e69", 
+                                "Santa Barbara" = "#9a8c98", 
+                                "San Luis Obispo" = "#f0e68c")) +
+  theme_minimal() +
+  labs(title = "50% Phaseout of Fossil Fuel Jobs in CC",
+       x = "Year", y = "Fossil Fuel Jobs",
+       color = "County") +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.position = "bottom",
+    plot.background = element_rect(fill = "#EFEFEF")
+  )
+
+# Plot the linear phaseout for each county
+ff_jobs_80_phaseout_plot <- ggplot(df_phaseout_80, aes(x = year, y = jobs, color = county)) +
+  geom_line(size = 1.5) +
+  scale_color_manual(values = c("Ventura" = "#4a4e69", 
+                                "Santa Barbara" = "#9a8c98", 
+                                "San Luis Obispo" = "#f0e68c")) +
+  theme_minimal() +
+  labs(title = "80% Phaseout of Fossil Fuel Jobs in CC",
+       x = "Year", y = "Fossil Fuel Jobs",
+       color = "County") +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.position = "bottom",
+    plot.background = element_rect(fill = "#EFEFEF")
+  )
+
+# Display the plot
+ff_jobs_50_phaseout_plot
+ff_jobs_80_phaseout_plot
+```
+
+```{r}
+stacked_ff_jobs <- ggplot() +
+    geom_bar(data = df_phaseout, aes(x = year, y = jobs), fill = "#4a4e69", stat = "identity", size = 1.25, position = "stack") +
+    geom_bar(data = df_phaseout_50, aes(x = year, y = jobs), fill = "#9a8c98", stat = "identity", size = 1.25, position = "stack") +
+    geom_bar(data = df_phaseout_80, aes(x = year, y = jobs), fill = "#f0e68c", stat = "identity", size = 1.25, position = "stack") +
+    facet_wrap(~county) +
+    labs(x = NULL,
+         y = "FTE jobs",
+         title = "Projected direct jobs in Ventura county from Utility PV development") +
+    scale_y_continuous(labels = scales::label_comma()) +
+    scale_x_continuous(breaks = seq(min(df_phaseout$year), max(df_phaseout$year), by = 10)) +
+    theme_minimal() +
+    theme(
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 24, margin = margin(5, 20, 0, 10)),
+        axis.text = element_text(size = 20), 
+        legend.title = element_blank(),
+        legend.text = element_text(size = 20),
+        legend.position = "bottom",
+        plot.background = element_rect(fill = "#EFEFEF"),
+        plot.title = element_blank(),
+        panel.grid = element_line(color = "grey85"),
+        axis.text.x = element_text(angle = 45, hjust = 1)
+    )
+
+stacked_ff_jobs
+ggsave('plots/ff_jobs_stacked_bar.png', stacked_ff_jobs, width = 8, height = 6)
 ```
 
