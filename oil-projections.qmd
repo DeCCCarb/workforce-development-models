@@ -1,0 +1,48 @@
+---
+title: "oil-projections"
+format: html
+warning: false
+messages: false
+editor_options: 
+  chunk_output_type: console
+---
+
+The purpose of this document is to investigate the data from Deshmukh et al., making sure that the initial values for our counties of interest align with our BLS data. Then, once we've confirmed those values, we will filter the data down to only our policy assumptions, and retreive the projections for number of jobs in Santa Barbara, San Luis Obispo, and Ventura counties in oil and gas from the present through 2045. To filter down to our policy assumptions, we will assume these things:
+- a 2500 ft setback (setback_2500)
+- reference case for our oil_price scenario
+- no excise tax
+- no prod_quota_scenario 
+our low and high ambition scenarios for job projections will be:
+- low ambition: carbon_price_scenario is price floor (no_tax)
+- high ambition: carbon tax is at 90% (carbon_target_90perc_reduction)
+
+Of course, first I need to read in my libraries
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(here)
+```
+
+Okay, let's start by reading in the data from Deshmukh et al.. I am going to immediately filter to our counties of interest because the data set is huge.
+
+```{r}
+job_projections <- read_csv(here('county_oil_employment_projections.csv')) %>% 
+    filter(county %in% c('Santa Barbara','San Luis Obispo','Ventura'))
+```
+
+Now that we have all of the data for our three counties, let's filter to the scenario of a 2500 ft setback, reference case for oil_price_scenario, no excise tax, and no_prod_quota_scenario
+
+```{r}
+job_projections_clean <- job_projections %>% 
+    filter(excise_tax_scenario == 'no tax') %>% 
+    filter(setback_scenario == 'setback_2500ft') %>% 
+    filter(oil_price_scenario == 'reference case') %>% 
+    filter(prod_quota_scenario == 'no quota')
+```
+
+
+```{r}
+
+```
+
