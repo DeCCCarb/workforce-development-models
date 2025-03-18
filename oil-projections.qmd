@@ -22,6 +22,7 @@ Of course, first I need to read in my libraries
 library(tidyverse)
 library(ggplot2)
 library(here)
+library(patchwork)
 ```
 
 Okay, let's start by reading in the data from Deshmukh et al.. I am going to immediately filter to our counties of interest because the data set is huge.
@@ -41,8 +42,39 @@ job_projections_clean <- job_projections %>%
     filter(prod_quota_scenario == 'no quota')
 ```
 
+We can now visualize our three counties' direct employment for the years 2019-2023. This is the time chunk that BLS has their data. So first we are going to look at those years. Once we confirm that will be okay, we will visualize the rest of the data, showing the projections up through 2045.
 
+First, we'll do simple bar charts for each county and use patchwork to put it together
 ```{r}
+ventura_current_emp_plot <- job_projections_clean %>% 
+    filter(county == 'Ventura' & year %in% c(2019:2023)) %>% 
+    ggplot(aes(x = year, y = c.dire_emp)) +
+    geom_col() +
+    labs(title = 'Ventura')
 
+sb_current_emp_plot <- job_projections_clean %>% 
+    filter(county == 'Santa Barbara' & year %in% c(2019:2023)) %>% 
+    ggplot(aes(x = year, y = c.dire_emp)) +
+    geom_col() +
+    labs(title = 'Santa Barbara')
+
+slo_current_emp_plot <- job_projections_clean %>% 
+    filter(county == 'San Luis Obispo' & year %in% c(2019:2023)) %>% 
+    ggplot(aes(x = year, y = c.dire_emp)) +
+    geom_col() +
+    labs(title = 'San Luis Obispo')
+
+all_counties_current_emp_plot <- ventura_current_emp_plot + sb_current_emp_plot + slo_current_emp_plot
+```
+
+To make it cleaner, let's try using a stacked bar chart
+```{r}
+stacked_area_all_counties_current_emp <- job_projections_clean %>%
+    filter(year %in% c(2019:2023)) %>% 
+    ggplot(aes(x = year, y = c.dire_emp, fill = county)) +
+    geom_bar(stat = 'identity', position = 'stack') +
+    labs(title = 'Direct Employment in Oil 2019-2023') +
+    scale_fill_manual(values = c('Ventura' = '#4a4e69', 'Santa Barbara' = '#9a8c98', 'San Luis Obispo' = '#f0e68c')) +
+    theme_minimal()
 ```
 
