@@ -8,6 +8,7 @@ editor_options:
 ---
 
 The purpose of this document is to investigate the data from Deshmukh et al., making sure that the initial values for our counties of interest align with our BLS data. Then, once we've confirmed those values, we will filter the data down to only our policy assumptions, and retreive the projections for number of jobs in Santa Barbara, San Luis Obispo, and Ventura counties in oil and gas from the present through 2045. To filter down to our policy assumptions, we will assume these things:
+
 - a 2500 ft setback (setback_2500)
 - reference case for our oil_price scenario
 - no excise tax
