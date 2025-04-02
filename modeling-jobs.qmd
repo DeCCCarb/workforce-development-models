@@ -400,7 +400,6 @@ ggsave('pv_all_plot.png', pv_all_plot1, width = 8, height = 6)
 
 ```
 ```{r}
-# Brooke: testing out Ranjit's idea for annual capacity plot ----
 
 # Adjust dataframe to only show total
 pv_total_cap <- pv_all |>
@@ -435,7 +434,6 @@ ggplot() +
          y= 'Megawatt (MW)')
 ```
  
-```{r}
 
 
 
@@ -547,9 +545,6 @@ osw_df <- tibble(
 
 print(osw_df)
 
-ggplot(osw) +
-    geom_line(aes(x = year, y = total_capacity)) +
-    geom_line(aes(x = year, y = new_construction_capacity))
 ```
 
 
@@ -619,4 +614,9 @@ ggplot(osw) +
 
 Horray! In the future, we can go back and add indirect and induced for both occupations. Also maybe add a new row for ambition high or low and include both in one df?
 
+
+# Make joint dataframe to export to our dashboard eventually ----
+```{r}
+
+```
 
