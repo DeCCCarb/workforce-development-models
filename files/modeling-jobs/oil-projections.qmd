@@ -1,0 +1,301 @@
+---
+title: "oil-projections"
+format: html
+warning: false
+messages: false
+editor_options: 
+  chunk_output_type: console
+---
+
+The purpose of this document is to investigate the data from Deshmukh et al., making sure that the initial values for our counties of interest align with our BLS data. Then, once we've confirmed those values, we will filter the data down to only our policy assumptions, and retreive the projections for number of jobs in Santa Barbara, San Luis Obispo, and Ventura counties in oil and gas from the present through 2045. To filter down to our policy assumptions, we will assume these things:
+
+- a 2500 ft setback (setback_2500)
+- reference case for our oil_price scenario
+- no excise tax
+- no prod_quota_scenario 
+our low and high ambition scenarios for job projections will be:
+- low ambition: carbon_price_scenario is price floor (no_tax)
+- high ambition: carbon tax is at 90% (carbon_target_90perc_reduction)
+
+Of course, first I need to read in my libraries
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(here)
+library(patchwork)
+```
+
+Okay, let's start by reading in the data from Deshmukh et al.. I am going to immediately filter to our counties of interest because the data set is huge.
+
+```{r}
+job_projections <- read_csv(here('county_oil_employment_projections.csv')) %>% 
+    filter(county %in% c('Santa Barbara','San Luis Obispo','Ventura'))
+```
+
+Now that we have all of the data for our three counties, let's filter to the scenario of a 2500 ft setback, reference case for oil_price_scenario, no excise tax, and no_prod_quota_scenario
+
+```{r}
+job_projections_clean <- job_projections %>% 
+    filter(excise_tax_scenario == 'no tax') %>% 
+    filter(setback_scenario == 'setback_2500ft') %>% 
+    filter(oil_price_scenario == 'reference case') %>% 
+    filter(prod_quota_scenario == 'no quota')
+```
+
+We can now visualize our three counties' direct employment for the years 2019-2023. This is the time chunk that BLS has their data. So first we are going to look at those years. Once we confirm that will be okay, we will visualize the rest of the data, showing the projections up through 2045.
+
+First, we'll do simple bar charts for each county and use patchwork to put it together
+```{r}
+ventura_current_emp_plot <- job_projections_clean %>% 
+    filter(county == 'Ventura' & year %in% c(2019:2023)) %>% 
+    ggplot(aes(x = year, y = c.dire_emp)) +
+    geom_col() +
+    labs(title = 'Ventura')
+
+sb_current_emp_plot <- job_projections_clean %>% 
+    filter(county == 'Santa Barbara' & year %in% c(2019:2023)) %>% 
+    ggplot(aes(x = year, y = c.dire_emp)) +
+    geom_col() +
+    labs(title = 'Santa Barbara')
+
+slo_current_emp_plot <- job_projections_clean %>% 
+    filter(county == 'San Luis Obispo' & year %in% c(2019:2023)) %>% 
+    ggplot(aes(x = year, y = c.dire_emp)) +
+    geom_col() +
+    labs(title = 'San Luis Obispo')
+
+all_counties_current_emp_plot <- ventura_current_emp_plot + sb_current_emp_plot + slo_current_emp_plot
+```
+
+To make it cleaner, let's try using a stacked bar chart
+```{r}
+stacked_area_all_counties_current_emp <- job_projections_clean %>%
+    filter(year %in% c(2019:2023)) %>% 
+    ggplot(aes(x = year, y = c.dire_emp, fill = county)) +
+    geom_bar(stat = 'identity', position = 'stack') +
+    labs(title = 'Direct Employment in Oil 2019-2023') +
+    scale_fill_manual(values = c('Ventura' = '#4a4e69', 'Santa Barbara' = '#9a8c98', 'San Luis Obispo' = '#f0e68c')) +
+    theme_minimal()
+```
+
+
+
+# Undergrad BLS data for comparison
+
+We're going to start by reading in MSA_ALL_YEARS.csv. This is combined BLS data for fossil fuel and green job occupations.
+
+```{r}
+# Filter down data to our counties: Ventura, Santa Barbara, and San Luis Obispo
+msa_all_years <- read.csv(here('MSA_ALL_YEARS.csv')) %>% 
+    clean_names() %>% 
+    filter(str_detect(area_title,
+                      regex("Santa Barbara|Ventura|San Luis Obispo",
+                            ignore_case = TRUE)))
+
+# Filter only fossil fuel jobs in these counties
+msa_ff <- msa_all_years %>% 
+    select(-8:-22) %>% 
+    filter(label == "ff job")
+
+# Replace '**' with NA and then convert 'tot_emp' to numeric
+msa_ff$tot_emp <- as.numeric(gsub("\\*\\*", NA, msa_ff$tot_emp))
+
+# Find total ff jobs in each county (we'll use this to multiply by for scaledown)
+msa_ff_grouped <- msa_ff %>% 
+    group_by(area_title) %>% 
+    summarize(total_employed = sum(tot_emp, na.rm = TRUE))
+```
+
+Now, let's plot our initial values for fossil fuel jobs in our respective areas. 
+```{r}
+ff_jobs_plot <- ggplot(msa_ff_grouped) +
+    theme_minimal() +
+    geom_col(aes(x = area_title, y = total_employed)) +
+    theme(plot.background = element_rect(color = "black", fill = NA, size = 1),
+          axis.text.x = element_text(angle = 45, hjust = 1)) +
+    labs(x = NULL,
+         y= "FF Jobs",
+         title = "Number of Fossil Fuel Jobs in CC")
+
+#ggsave('plots/ff_jobs_plot.png', ff_jobs_plot, width = 8, height = 6)\
+ff_jobs_plot
+```
+
+```{r}
+# Create a new column for county grouping
+msa_ff_final <- msa_ff_grouped %>% 
+    mutate(county = case_when(
+        str_detect(area_title, "Ventura") ~ "Ventura",
+        str_detect(area_title, "Santa Barbara") ~ "Santa Barbara",
+        str_detect(area_title, "San Luis Obispo") ~ "San Luis Obispo"
+    ))
+
+msa_ff_final %>% 
+    group_by(county)
+
+msa_reduced <- msa_ff_final %>% 
+    mutate(jobs_50 = total_employed - (total_employed*0.5),
+           jobs_80 = total_employed - (total_employed*0.8),
+           all_jobs = total_employed)
+
+ff_jobs_plot_final <- ggplot(msa_reduced) +
+    geom_col(aes(x = county, y = total_employed, fill = "Total Employed")) +
+    geom_col(aes(x = county, y = jobs_50, fill = "50% Phaseout")) +
+    geom_col(aes(x = county, y = jobs_80, fill = "80% Phaseout")) +
+    scale_fill_manual(values = c("Total Employed" = "#4a4e69", 
+                                 "50% Phaseout" = "#9a8c98", 
+                                 "80% Phaseout" = "#f0e68c")) +
+    labs(x = NULL,
+         y = NULL,
+         title = "Number of Fossil Fuel Jobs in CC")
+# ggsave('plots/ff_jobs_plot.png', ff_jobs_plot_final, width = 8, height = 6)
+ff_jobs_plot_final
+```
+
+```{r}
+msa_reduced %>% 
+    ggplot() +
+    geom_point(aes(x=year, y=jobs_50_t, color = "lightblue")) +
+    geom_point(aes(x=year, y=jobs_80_t, color = "green")) +
+    geom_point(aes(x=year, y=total_employed, color= "pink")) +
+    facet_wrap(~county)
+```
+
+```{r}
+# Create a data frame for the years from 2025 to 2045
+years <- seq(2025, 2045, by = 1)
+
+# Define the initial and final job numbers for each county (50% phaseout scenario)
+# These numbers are just examples; use your actual starting values (3610 for Ventura in 2025, etc.)
+job_start_ventura <- 3610
+job_end_ventura_50 <- 1805
+job_end_ventura_80 <- 722
+
+job_start_sb <- 1200
+job_end_sb_50 <- 600
+job_end_sb_80 <- 240
+
+
+job_start_slo <- 280
+job_end_slo_50 <- 140
+job_end_slo_80 <- 56
+
+# Create a function to calculate the linear phaseout jobs for a given county
+calculate_linear_phaseout <- function(start_jobs, end_jobs, years) {
+    slope <- (end_jobs - start_jobs) / (2045 - 2025)
+    jobs_per_year <- start_jobs + slope * (years - 2025)
+    return(jobs_per_year)
+}
+
+
+# Calculate the linear phaseout jobs for each county for 50% phaseout 
+ventura_jobs <- calculate_linear_phaseout(job_start_ventura, job_start_ventura, years)
+sb_jobs <- calculate_linear_phaseout(job_start_sb, job_start_sb, years)
+slo_jobs <- calculate_linear_phaseout(job_start_slo, job_start_slo, years)
+
+# Calculate the linear phaseout jobs for each county for 50% phaseout 
+ventura_jobs_50 <- calculate_linear_phaseout(job_start_ventura, job_end_ventura_50, years)
+sb_jobs_50 <- calculate_linear_phaseout(job_start_sb, job_end_sb_50, years)
+slo_jobs_50 <- calculate_linear_phaseout(job_start_slo, job_end_slo_50, years)
+
+# Calculate the linear phaseout jobs for each county for 80% phaseout 
+ventura_jobs_80 <- calculate_linear_phaseout(job_start_ventura, job_end_ventura_80, years)
+sb_jobs_80 <- calculate_linear_phaseout(job_start_sb, job_end_sb_80, years)
+slo_jobs_80 <- calculate_linear_phaseout(job_start_slo, job_end_slo_80, years)
+
+# Create initial data frame
+df_phaseout <- data.frame(
+    year = rep(years, times = 3),  # Repeat the years for each county
+    county = rep(c("Ventura", "Santa Barbara", "San Luis Obispo"), each = length(years)),
+    jobs = c(ventura_jobs, 
+             sb_jobs,
+             slo_jobs)
+)
+
+# Create a data frame with the results for 50%
+df_phaseout_50 <- data.frame(
+    year = rep(years, times = 3),
+    county = rep(c("Ventura", "Santa Barbara", "San Luis Obispo"), each = length(years)),
+    jobs = c(ventura_jobs_50, 
+             sb_jobs_50,
+             slo_jobs_50)
+)
+
+# Create a data frame with the results for 80%
+df_phaseout_80 <- data.frame(
+    year = rep(years, times = 3),
+    county = rep(c("Ventura", "Santa Barbara", "San Luis Obispo"), each = length(years)),
+    jobs = c(ventura_jobs_80, 
+             sb_jobs_80,
+             slo_jobs_80)
+)
+
+# Plot the linear phaseout for each county
+ff_jobs_50_phaseout_plot <- ggplot(df_phaseout_50, aes(x = year, y = jobs, color = county)) +
+    geom_line(size = 1.5) +
+    scale_color_manual(values = c("Ventura" = "#4a4e69", 
+                                  "Santa Barbara" = "#9a8c98", 
+                                  "San Luis Obispo" = "#f0e68c")) +
+    theme_minimal() +
+    labs(title = "50% Phaseout of Fossil Fuel Jobs in CC",
+         x = "Year", y = "Fossil Fuel Jobs",
+         color = "County") +
+    theme(
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "bottom",
+        plot.background = element_rect(fill = "#EFEFEF")
+    )
+
+# Plot the linear phaseout for each county
+ff_jobs_80_phaseout_plot <- ggplot(df_phaseout_80, aes(x = year, y = jobs, color = county)) +
+    geom_line(size = 1.5) +
+    scale_color_manual(values = c("Ventura" = "#4a4e69", 
+                                  "Santa Barbara" = "#9a8c98", 
+                                  "San Luis Obispo" = "#f0e68c")) +
+    theme_minimal() +
+    labs(title = "80% Phaseout of Fossil Fuel Jobs in CC",
+         x = "Year", y = "Fossil Fuel Jobs",
+         color = "County") +
+    theme(
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "bottom",
+        plot.background = element_rect(fill = "#EFEFEF")
+    )
+
+# Display the plot
+ff_jobs_50_phaseout_plot
+ff_jobs_80_phaseout_plot
+```
+
+```{r}
+stacked_ff_jobs <- ggplot() +
+    geom_bar(data = df_phaseout, aes(x = year, y = jobs), fill = "#4a4e69", stat = "identity", size = 1.25, position = "stack") +
+    geom_bar(data = df_phaseout_50, aes(x = year, y = jobs), fill = "#9a8c98", stat = "identity", size = 1.25, position = "stack") +
+    geom_bar(data = df_phaseout_80, aes(x = year, y = jobs), fill = "#f0e68c", stat = "identity", size = 1.25, position = "stack") +
+    facet_wrap(~county) +
+    labs(x = NULL,
+         y = "FTE jobs",
+         title = "Projected direct jobs in Ventura county from Utility PV development") +
+    scale_y_continuous(labels = scales::label_comma()) +
+    scale_x_continuous(breaks = seq(min(df_phaseout$year), max(df_phaseout$year), by = 10)) +
+    theme_minimal() +
+    theme(
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 24, margin = margin(5, 20, 0, 10)),
+        axis.text = element_text(size = 20), 
+        legend.title = element_blank(),
+        legend.text = element_text(size = 20),
+        legend.position = "bottom",
+        plot.background = element_rect(fill = "#EFEFEF"),
+        plot.title = element_blank(),
+        panel.grid = element_line(color = "grey85"),
+        axis.text.x = element_text(angle = 45, hjust = 1)
+    )
+
+stacked_ff_jobs
+ggsave('plots/ff_jobs_stacked_bar.png', stacked_ff_jobs, width = 8, height = 6)
+```
+
+
+
