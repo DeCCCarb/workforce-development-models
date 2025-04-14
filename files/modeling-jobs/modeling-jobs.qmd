@@ -494,7 +494,7 @@ ventura_roof_pv_om <- calculate_pv_om_jobs(
     induced_jobs = 0
 )
 
-# Construction Utility PV
+# Construction Rooftop PV
 ventura_roof_pv_const <- calculate_pv_construction_jobs(
     county = "V",
     start_year = 2025,
