@@ -31,7 +31,7 @@ The next section is where we wrote the code for creating different plots.
 
 # Analysis
 
-## PV
+## PV 
 
 Use the following code to create a table containing direct, indirect, and induced PV jobs in each county
 
@@ -817,14 +817,14 @@ osw_construction_high <- calculate_osw_construction_jobs(county = "Tri-County",
 # Low ambition ----
 # O&M OSW
 osw_om_low <- calculate_osw_om_jobs(county = "Tri-county",
-                                     start_year = 2025,
-                                     end_year = 2045,
-                                     ambition = "Low",
-                                     initial_capacity = 0.1,
-                                     target_capacity = 6,
-                                     direct_jobs = 127,
-                                     indirect_jobs = 126,
-                                     induced_jobs = 131)
+                                    start_year = 2025,
+                                    end_year = 2045,
+                                    ambition = "Low",
+                                    initial_capacity = 0.1,
+                                    target_capacity = 6,
+                                    direct_jobs = 127,
+                                    indirect_jobs = 126,
+                                    induced_jobs = 131)
 
 
 # Construction OSW
@@ -850,6 +850,8 @@ remove(osw_om_high, osw_construction_high, osw_om_low, osw_construction_low)
 
 ## Oil Well Capping
 
+CLEAN ME!
+
 ```{r}
 # Read in well data from Deshmukh et al. paper
 wells <- read_csv(here::here("data", "AllWells_20210427.csv"))
@@ -863,20 +865,253 @@ unique(wells$WellStatus)
 ```{r}
 # Filter to idle wells
 idle_wells <- wells |>
-    filter(WellStatus == "Idle")
+    filter(WellStatus == "Idle" &
+            WellTypeLa == "Oil & Gas")
 
 # Filter to idle wells in the Central Coast
 idle_wells_central_coast <- idle_wells |>
     filter(CountyName == "Santa Barbara" | 
                CountyName == "San Luis Obispo" |
-               CountyName == "Ventura")
+               CountyName == "Ventura" &
+               WellTypeLa == "Oil & Gas")
 ```
 
 There are 38,490 idle wells in this dataset, and 3,919 of them are in the central coast.
+Of the idle wells, 25,320 of them are of tyle Oil & Gas. In the central coast, its 3,149.
 
-## Land Based Wind
+```{r}
+# Calculate capping rate for a linear capping projection, starting with 0 wells capped at first year and increasing to all idle + active wells capped in final year (this will only work if the projections end at 2045 or later, because of the assumption that all currently active wells will become idle within the scope of the analysis. The average lifespan of a well is 15-20 years, and if we end projections earlier than 20 years, we will be counting active wells that may not be idle yet)
 
-Land based wind analysis here
+# General formula will be capping_rate = idle_plus_active_wells / timeline_to_cap (ex: 2025-2045 = 20)
+
+# Calculate total wells in Santa Barbara to be capped and save - include Idle, Active, and New
+idle_plus_active_wells_sb <- nrow(wells |>
+    filter(WellStatus %in% c("Idle", "Active", "New") &
+               WellTypeLa == "Oil & Gas" &
+               CountyName == "Santa Barbara"))
+
+# Calculate the capping rate (number of wells to cap each year)
+capping_rate <- idle_plus_active_wells_sb / (2045-2025)
+
+# Make df with year
+oil_capping_jobs <- data.frame(
+    year = 2025:2045
+)
+
+# Calculate total wells capped at each year
+oil_capping_jobs <- oil_capping_jobs |>
+    mutate(total_wells_capped = round((year - 2025) * capping_rate, 0))
+
+# Calculate total jobs
+oil_capping_jobs <- oil_capping_jobs |>
+    mutate(total_jobs_created = round(total_wells_capped * 0.25, 0))
+```
+
+```{r}
+ggplot(oil_capping_jobs) +
+    geom_point(aes(x = year, y = total_jobs_created),
+               color = "blue")
+```
+
+This analysis pretty much shows that to cap all 1977 idle and active wells in Santa Barbara county by 2045, there will be 494 jobs created, or about 25 annual jobs created for 20 years. 
+
+
+
+
+## Land-Based Wind
+
+### Define Functions
+```{r}
+###################### Land Wind O&M Jobs Function ######################
+#' Calculate Land-Based Wind Operations and Maintenance jobs and annual capacity
+#'
+#' @param county Character string. Name of the county.
+#' @param start_year Integer. The year that you are starting with. E.g., 2025 for a 2025-2045 analysis.
+#' @param end_year Integer. The year you are ending with. E.g., 2045 for a 2025-2045 analysis.
+#' @param initial_capacity Numeric. Starting capacity in Gigawatts.
+#' @param final_capacity Numeric. Target capacity in Gigawatts. E.g., 5 for 5 GW goal in 2045.
+#' @param direct_jobs Numeric. JEDI output representing number of direct O&M jobs per GW of land wind.
+#' @param indirect_jobs Numeric. JEDI output representing number of indirect O&M jobs per GW of land wind.
+#' @param induced_jobs Numeric. JEDI output representing number of induced O&M jobs per GW of land wind.
+#'
+#' @return Data Frame projecting total O&M jobs each year and energy capacity over designated time period
+#'
+#' @examples
+#' Santa Barbara Land-Based Wind O&M Jobs from 2025-2045, starting with 0.98 GW in 2025 and increasing to 3 GW by 2045:
+#' sb_land_wind_om_jobs <- calculate_land_wind_om_jobs(county = "SB",
+#'                                            start_year = 2025,
+#'                                            end_year = 2045,
+#'                                            initial_capacity = 0.98,
+#'                                            final_capacity = 3,
+#'                                            direct_jobs = 0.5,
+#'                                            indirect_jobs = 0.1,
+#'                                            induced_jobs = 0.2)
+#' print(sb_land_wind_om_jobs) 
+
+calculate_land_wind_om_jobs <- function(county, start_year, end_year, initial_capacity,
+                                        final_capacity, direct_jobs, indirect_jobs, induced_jobs) {
+    
+    # Calculate the annual growth rate
+    growth_rate <- (final_capacity / initial_capacity)^(1 / (end_year - start_year)) - 1
+    
+    # Create variables to store the results
+    year <- start_year:end_year
+    capacity <- numeric(length(year))
+    new_capacity <- numeric(length(year))
+    
+    # Calculate the total capacity for each year
+    for (i in 1:length(year)) {
+        capacity[i] <- initial_capacity * (1 + growth_rate)^(year[i] - start_year)
+        if (i == 1) {
+            new_capacity[i] <- capacity[i] - initial_capacity
+        } else {
+            new_capacity[i] <- capacity[i] - capacity[i-1]
+        }
+    }
+    
+    # Create a data frame with the results
+    df <- data.frame(county = county, 
+                     year = year, 
+                     technology = "Land-Based Wind",
+                     ambition = NA,
+                     new_capacity_mw = round(new_capacity*1000, 2),
+                     total_capacity_mw = round(capacity*1000, 2),
+                     new_capacity_gw = round(new_capacity, 2),
+                     total_capacity_gw = round(capacity, 2))
+    
+    # Direct jobs
+    df_direct <- df %>%
+        mutate(occupation = "O&M", 
+               type = "direct", 
+               n_jobs = round(total_capacity_gw * direct_jobs, 2))
+    
+    # Indirect jobs
+    df_indirect <- df %>%
+        mutate(occupation = "O&M",
+               type = "indirect", 
+               n_jobs = round(total_capacity_gw * indirect_jobs, 2))
+    
+    # Induced jobs
+    df_induced <- df %>%
+        mutate(occupation = "O&M",
+               type = "induced", 
+               n_jobs = round(total_capacity_gw * induced_jobs, 2))
+    
+    # Stack them together for total jobs
+    df_final <- rbind(df_direct, df_indirect, df_induced)
+    
+    return(df_final)
+}
+
+#################### Land Wind Construction Jobs Function ####################
+#' Calculate Land Wind Construction jobs and annual capacity
+#'
+#' @param county Character string. Name of the county.
+#' @param start_year Integer. The year that you are starting with. E.g., 2025 for a 2025-2045 analysis.
+#' @param end_year Integer. The year you are ending with. E.g., 2045 for a 2025-2045 analysis.
+#' @param initial_capacity Numeric. Starting capacity in Gigawatts.
+#' @param final_capacity Numeric. Target capacity in Gigawatts. E.g., 5 for 5 GW goal in 2045.
+#' @param direct_jobs Numeric. JEDI output representing number of direct construction jobs per GW of land wind.
+#' @param indirect_jobs Numeric. JEDI output representing number of indirect construction jobs per GW of land wind.
+#' @param induced_jobs Numeric. JEDI output representing number of induced construction jobs per GW of land wind.
+#'
+#' @return Data Frame projecting total construction jobs each year and energy capacity over designated time period
+#'
+#' @examples
+#' Santa Barbara Land-Based Wind construction Jobs from 2025-2045, starting with 0.98 GW in 2025 and increasing to 3 GW by 2045:
+#' sb_land_wind_const_jobs <- calculate_land_wind_const_jobs(county = "SB",
+#'                                            start_year = 2025,
+#'                                            end_year = 2045,
+#'                                            initial_capacity = 0.98,
+#'                                            final_capacity = 3,
+#'                                            direct_jobs = 0.5,
+#'                                            indirect_jobs = 0.1,
+#'                                            induced_jobs = 0.2)
+#' print(sb_land_wind_const_jobs) 
+
+calculate_land_wind_construction_jobs <- function(county, start_year, end_year, initial_capacity, final_capacity, direct_jobs, indirect_jobs, induced_jobs) {
+    
+    # Calculate the annual growth rate
+    growth_rate <- (final_capacity / initial_capacity)^(1 / (end_year - start_year)) - 1
+    
+    # Create variables to store the results
+    year <- start_year:end_year
+    capacity <- numeric(length(year))
+    new_capacity <- numeric(length(year))
+    
+    # Calculate the total capacity for each year
+    for (i in 1:length(year)) {
+        capacity[i] <- initial_capacity * (1 + growth_rate)^(year[i] - start_year)
+        if (i == 1) {
+            new_capacity[i] <- capacity[i] - initial_capacity
+        } else {
+            new_capacity[i] <- capacity[i] - capacity[i-1]
+        }
+    }
+    
+    # Create a data frame with the results
+    df <- data.frame(county = county, 
+                     year = year, 
+                     technology = "Land-Based Wind",
+                     ambition = NA,
+                     new_capacity_mw = round(new_capacity*1000, 2),
+                     total_capacity_mw = round(capacity*1000, 2),
+                     new_capacity_gw = round(new_capacity, 2),
+                     total_capacity_gw = round(capacity, 2))
+    
+    # Direct jobs - it is assumed that construction of land wind project takes on average 1 year
+    df_direct <- df %>%
+        mutate(occupation = "Construction", 
+               type = "direct", 
+               n_jobs = round(new_capacity_gw * direct_jobs, 2))
+    
+    # Indirect jobs
+    df_indirect <- df %>%
+        mutate(occupation = "Construction",
+               type = "indirect", 
+               n_jobs = round(new_capacity_gw * indirect_jobs, 2))
+    
+    # Induced jobs
+    df_induced <- df %>%
+        mutate(occupation = "Construction",
+               type = "induced", 
+               n_jobs = round(new_capacity_gw * induced_jobs, 2))
+    
+    # Stack them together for total jobs
+    df_final <- rbind(df_direct, df_indirect, df_induced)
+    
+    return(df_final)
+}
+```
+
+### Create Land-Based Wind Jobs DataFrame
+
+Land-based wind projections are not included in our analysis for reporting, because there are unclear capacity goals in the Central Coast. However, we wanted to include this technology option in our dashboard, in the case that land-based wind becomes an energy source that the central coast is interested in expanding. 
+
+The following code is just a test that the above function works as anticipated, and these results will not be incorporated into our data. 
+
+```{r}
+land_wind_construction_test <- calculate_land_wind_construction_jobs(county = "SB",
+                                                                     start_year = 2025,
+                                                                     end_year = 2045,
+                                                                     initial_capacity = 0.98,
+                                                                     final_capacity = 5,
+                                                                     direct_jobs = 1,
+                                                                     indirect_jobs = 1,
+                                                                     induced_jobs = 1)
+
+land_wind_om_test <- calculate_land_wind_om_jobs(county = "SB",
+                                                 start_year = 2025,
+                                                 end_year = 2045,
+                                                 initial_capacity = 0.98,
+                                                 final_capacity = 5,
+                                                 direct_jobs = 1,
+                                                 indirect_jobs = 1,
+                                                 induced_jobs = 1)
+```
+
+
+
 
 ## Fossil Fuel Phaseout
 
