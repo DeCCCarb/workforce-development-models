@@ -364,6 +364,7 @@ slo_utility_pv_const <- calculate_pv_construction_jobs(
     induced_jobs = 0.3
 )
 
+
 # O&M Rooftop PV
 slo_roof_pv_om <- calculate_pv_om_jobs(
     county = "SLO", 
@@ -1157,7 +1158,7 @@ pv_all_plot1 <- ggplot(pv_v_plot) +
 pv_all_plot1
 
 
-ggsave('plots/pv_base_plot.png', pv_all_plot1, width = 8, height = 6)
+ggsave(here::here('plots', 'pv_base_plot.png'), pv_all_plot1, width = 8, height = 6)
 
 ```
 
@@ -1380,9 +1381,9 @@ ggsave('plots/pv_u_slo_plot.png', pv_all_plot1, width = 8, height = 6)
 
 Plot of osw capacities
 ```{r}
-total_cap_line <- osw |>
+total_cap_line <- osw_all |>
     filter(year %in% c(2030:2045))
-annual_cap_line <- osw |>
+annual_cap_line <- osw_all |>
     filter(year %in% c(2026:2041))
 
 osw_capacity_growth_plot_faculty_review <- ggplot() +
@@ -1431,7 +1432,7 @@ ggplot(osw) +
 
 ```{r}
 #direct_jobs_stacked_bar_faculty_review <- 
-osw2 |>
+osw_all |>
     #filter(type == "indirect") |>
     ggplot() +
     geom_col(aes(x = year, y = n_jobs)) #+
