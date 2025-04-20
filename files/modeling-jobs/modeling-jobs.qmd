@@ -862,6 +862,7 @@ We will predict the jobs created from capping all idle and active oil & gas well
 **Assumptions:**
 - The average lifespan of a well is 15-20 years, so all active wells will become idle by 2045
 - The number of new wells that will be drilled in that time is negligible 
+- It takes 0.25 FTE jobs to cap 1 oil well (source: ________)
 ```{r}
 ############################# Santa Barbara #############################
 
