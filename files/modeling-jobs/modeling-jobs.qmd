@@ -11,8 +11,6 @@ editor_options:
 # Load libraries
 library(tidyverse)
 library(here)
-library(janitor)
-library(stringr)
 ```
 
 
@@ -208,7 +206,7 @@ calculate_pv_construction_jobs <- function(county, start_year, end_year, technol
 
 ```
 
-### Create PV Jobs DataFrame
+### Create PV Jobs Data Frame
 
 Use the functions defined above to project solar jobs using JEDI estimates and capacity ambition goals
 
@@ -789,7 +787,7 @@ calculate_osw_om_jobs <- function(county, start_year, end_year, ambition, initia
 ```
 
 
-### Create OSW Jobs Dataframe
+### Create OSW Jobs Data Frame
 
 ```{r}
 # High ambition ----
@@ -850,39 +848,22 @@ remove(osw_om_high, osw_construction_high, osw_om_low, osw_construction_low)
 
 ## Oil Well Capping
 
-CLEAN ME!
-
 ```{r}
 # Read in well data from Deshmukh et al. paper
-wells <- read_csv(here::here("data", "AllWells_20210427.csv"))
+wells <- read_csv(here("data", "AllWells_20210427.csv"))
 ```
 
+In the Central Coast, there are 3,149 idle oil and gas wells
+
+### Create Oil Capping Jobs Data Frame
+
+We will predict the jobs created from capping all idle and active oil & gas wells in the Central Coast by 2045. 
+
+**Assumptions:**
+- The average lifespan of a well is 15-20 years, so all active wells will become idle by 2045
+- The number of new wells that will be drilled in that time is negligible 
 ```{r}
-# Look at all options for well status
-unique(wells$WellStatus)
-```
-
-```{r}
-# Filter to idle wells
-idle_wells <- wells |>
-    filter(WellStatus == "Idle" &
-            WellTypeLa == "Oil & Gas")
-
-# Filter to idle wells in the Central Coast
-idle_wells_central_coast <- idle_wells |>
-    filter(CountyName == "Santa Barbara" | 
-               CountyName == "San Luis Obispo" |
-               CountyName == "Ventura" &
-               WellTypeLa == "Oil & Gas")
-```
-
-There are 38,490 idle wells in this dataset, and 3,919 of them are in the central coast.
-Of the idle wells, 25,320 of them are of tyle Oil & Gas. In the central coast, its 3,149.
-
-```{r}
-# Calculate capping rate for a linear capping projection, starting with 0 wells capped at first year and increasing to all idle + active wells capped in final year (this will only work if the projections end at 2045 or later, because of the assumption that all currently active wells will become idle within the scope of the analysis. The average lifespan of a well is 15-20 years, and if we end projections earlier than 20 years, we will be counting active wells that may not be idle yet)
-
-# General formula will be capping_rate = idle_plus_active_wells / timeline_to_cap (ex: 2025-2045 = 20)
+############################# Santa Barbara #############################
 
 # Calculate total wells in Santa Barbara to be capped and save - include Idle, Active, and New
 idle_plus_active_wells_sb <- nrow(wells |>
@@ -903,19 +884,77 @@ oil_capping_jobs <- oil_capping_jobs |>
     mutate(total_wells_capped = round((year - 2025) * capping_rate, 0))
 
 # Calculate total jobs
+oil_capping_jobs_sb <- oil_capping_jobs |>
+    mutate(total_jobs_created = round(total_wells_capped * 0.25, 0),
+           county = "Santa Barbara")
+
+############################# San Luis Obispo #############################
+
+# Calculate total wells in Santa Barbara to be capped and save - include Idle, Active, and New
+idle_plus_active_wells_slo <- nrow(wells |>
+    filter(WellStatus %in% c("Idle", "Active", "New") &
+               WellTypeLa == "Oil & Gas" &
+               CountyName == "San Luis Obispo"))
+
+# Calculate the capping rate (number of wells to cap each year)
+capping_rate <- idle_plus_active_wells_slo / (2045-2025)
+
+# Make df with year
+oil_capping_jobs <- data.frame(
+    year = 2025:2045
+)
+
+# Calculate total wells capped at each year
 oil_capping_jobs <- oil_capping_jobs |>
-    mutate(total_jobs_created = round(total_wells_capped * 0.25, 0))
+    mutate(total_wells_capped = round((year - 2025) * capping_rate, 0))
+
+# Calculate total jobs
+oil_capping_jobs_slo <- oil_capping_jobs |>
+    mutate(total_jobs_created = round(total_wells_capped * 0.25, 0),
+           county = "San Luis Obispo")
+
+############################# Ventura #############################
+
+# Calculate total wells in Santa Barbara to be capped and save - include Idle, Active, and New
+idle_plus_active_wells_v <- nrow(wells |>
+    filter(WellStatus %in% c("Idle", "Active", "New") &
+               WellTypeLa == "Oil & Gas" &
+               CountyName == "Ventura"))
+
+# Calculate the capping rate (number of wells to cap each year)
+capping_rate <- idle_plus_active_wells_v / (2045-2025)
+
+# Make df with year
+oil_capping_jobs <- data.frame(
+    year = 2025:2045
+)
+
+# Calculate total wells capped at each year
+oil_capping_jobs <- oil_capping_jobs |>
+    mutate(total_wells_capped = round((year - 2025) * capping_rate, 0))
+
+# Calculate total jobs
+oil_capping_jobs_v <- oil_capping_jobs |>
+    mutate(total_jobs_created = round(total_wells_capped * 0.25, 0),
+           county = "Ventura")
 ```
 
 ```{r}
-ggplot(oil_capping_jobs) +
-    geom_point(aes(x = year, y = total_jobs_created),
-               color = "blue")
+# Combine oil capping jobs
+oil_capping_jobs <- rbind(oil_capping_jobs_slo, 
+                          oil_capping_jobs_sb, 
+                          oil_capping_jobs_v)
+
+# Clear environment
+remove(wells, capping_rate, idle_plus_active_wells_sb, 
+       idle_plus_active_wells_slo, idle_plus_active_wells_v,
+       oil_capping_jobs_sb, oil_capping_jobs_slo, oil_capping_jobs_v)
 ```
 
-This analysis pretty much shows that to cap all 1977 idle and active wells in Santa Barbara county by 2045, there will be 494 jobs created, or about 25 annual jobs created for 20 years. 
 
-
+- **SLO:** Capping all 337 idle and active oil and gas wells in San Luis Obispo county by 2045 will create about 4 annual jobs for 20 years for a total of 84 jobs
+- **SB:** Capping all 1,977 idle and active oil and gas wells in Santa Barbara county by 2045 will create about 25 annual jobs for 20 years for a total of 494 jobs
+- **Ventura:** Capping all 3,188 idle and active oil and gas wells in Ventura county by 2045 will create about 40 annual jobs for 20 years for a total of 797 jobs
 
 
 ## Land-Based Wind
@@ -1084,10 +1123,9 @@ calculate_land_wind_construction_jobs <- function(county, start_year, end_year, 
 }
 ```
 
-### Create Land-Based Wind Jobs DataFrame
+### Create Land-Based Wind Jobs Data Frame
 
 Land-based wind projections are not included in our analysis for reporting, because there are unclear capacity goals in the Central Coast. However, we wanted to include this technology option in our dashboard, in the case that land-based wind becomes an energy source that the central coast is interested in expanding. 
-
 The following code is just a test that the above function works as anticipated, and these results will not be incorporated into our data. 
 
 ```{r}
