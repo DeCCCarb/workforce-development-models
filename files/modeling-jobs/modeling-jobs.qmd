@@ -1782,3 +1782,48 @@ pv_2045_low_slo_plot <- ggplot(pv_2045_low_slo, aes(x = year, y = n_jobs, group 
 
 #ggsave('plots/pv_high_advocacy.png', pv_2045_high_plot, width = 12, height = 10)
 ```
+
+## Analysis for Lucas 4/21
+
+```{r}
+sb <- pv_and_osw |>
+    filter(type == "direct") |>
+    filter(ambition == "High") |>
+    filter(county != "SLO") |>
+    filter(county != "V")
+
+write_csv(sb, here("data", "sb_direct_high.csv"))
+```
+
+
+```{r}
+# Read in SB high ambition dataset
+sb_direct_high <- read_csv(here("data", "sb_direct_high.csv"))
+
+# Calculate total construction jobs for each tech ----
+
+#osw
+c_tot_osw <- sb_direct_high |>
+    filter(technology == "Offshore Wind") |>
+    filter(occupation == "Construction")
+
+c_tot_osw = round(sum(c_tot_osw$n_jobs), 0)
+
+# utility pv
+c_tot_u_pv <- sb_direct_high |>
+    filter(technology == "Utility PV") |>
+    filter(occupation == "Construction")
+
+c_tot_u_pv = round(sum(c_tot_u_pv$n_jobs), 0)
+
+# rooftop pv
+c_tot_r_pv <- sb_direct_high |>
+    filter(technology == "Rooftop PV") |>
+    filter(occupation == "Construction")
+
+c_tot_r_pv = round(sum(c_tot_r_pv$n_jobs), 0)
+```
+
+
+
+
