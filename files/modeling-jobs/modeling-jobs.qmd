@@ -1743,3 +1743,66 @@ pv_2045_low_slo_plot <- ggplot(pv_2045_low_slo, aes(x = year, y = n_jobs, group 
 
 #ggsave('plots/pv_high_advocacy.png', pv_2045_high_plot, width = 12, height = 10)
 ```
+
+Specific number of job results - Utility Solar
+```{r}
+rooftop_jobs_sb <- pv_all %>% 
+    filter(county == "SB" &
+               technology == "Rooftop PV" &
+               year == "2045" &
+               ambition == "High" &
+               type == "induced")
+
+rooftop_jobs_slo <- pv_all %>% 
+    filter(county == "SLO" &
+               technology == "Rooftop PV" &
+               year == "2045" &
+               ambition == "High" &
+               type == "induced")
+
+rooftop_jobs_v <- pv_all %>% 
+    filter(county == "V" &
+               technology == "Rooftop PV" &
+               year == "2045" &
+               ambition == "High" &
+               type == "induced")
+```
+
+```{r}
+osw_jobs <- osw_all %>%
+    filter(ambition == "Low" &
+               year == "2045" &
+               type == "indirect")
+```
+
+```{r}
+# low ambition 2045 goal utility solar dodged by county
+pv_2045_low <- pv_all %>% 
+    filter(county %in% c("SLO", "SB", "V") &
+               technology == "Utility PV" &
+               ambition == "Low" &
+               type == 'direct' &
+               occupation %in% c('O&M', 'Construction') &
+               year %in% c(2025:2045))
+
+pv_2045_low_plot <- ggplot(pv_2045_low, aes(x = year, y = n_jobs, group = occupation)) +
+    geom_col(position = position_dodge2(preserve = "single"), aes(group = interaction(county, occupation))) +
+    facet_wrap(~county) +
+    scale_fill_manual(labels = c("Construction Jobs", "Operations & Maintenance Jobs"),
+                      values = c("#4a4e69", "#9a8c98")) +
+    labs(title = "Projected direct jobs from Utility PV development",
+     y = "FTE Jobs") +
+    theme_minimal() +
+    theme(
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 24, margin = margin(5,20,0,10)),
+        axis.text = element_text(size = 20), 
+        plot.title = element_text(size=28),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 20),
+        legend.position = "bottom",
+        plot.background = element_rect(fill = "#EFEFEF"),
+        panel.grid = element_line(color = "grey85")
+    )
+```
+
