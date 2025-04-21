@@ -11,8 +11,6 @@ editor_options:
 # Load libraries
 library(tidyverse)
 library(here)
-library(janitor)
-library(stringr)
 ```
 
 
@@ -208,7 +206,7 @@ calculate_pv_construction_jobs <- function(county, start_year, end_year, technol
 
 ```
 
-### Create PV Jobs DataFrame
+### Create PV Jobs Data Frame
 
 Use the functions defined above to project solar jobs using JEDI estimates and capacity ambition goals
 
@@ -402,7 +400,7 @@ slo_utility_pv_om_low <- calculate_pv_om_jobs(
     technology = "Utility PV", 
     ambition = "Low",
     initial_capacity = 1615.819209, 
-    final_capacity =  63149.15, 
+    final_capacity =  6314.915, 
     direct_jobs = 0.2, 
     indirect_jobs = 0, 
     induced_jobs = 0
@@ -416,7 +414,7 @@ slo_utility_pv_const_low <- calculate_pv_construction_jobs(
     technology = "Utility PV",
     ambition = "Low",
     initial_capacity = 1615.819209,
-    final_capacity =  63149.15,
+    final_capacity =  6314.915,
     direct_jobs = 1.6,
     indirect_jobs = 0.7,
     induced_jobs = 0.3
@@ -790,7 +788,7 @@ calculate_osw_om_jobs <- function(county, start_year, end_year, ambition, initia
 ```
 
 
-### Create OSW Jobs Dataframe
+### Create OSW Jobs Data Frame
 
 ```{r}
 # High ambition ----
@@ -851,39 +849,23 @@ remove(osw_om_high, osw_construction_high, osw_om_low, osw_construction_low)
 
 ## Oil Well Capping
 
-CLEAN ME!
-
 ```{r}
 # Read in well data from Deshmukh et al. paper
-wells <- read_csv(here::here("data", "AllWells_20210427.csv"))
+wells <- read_csv(here("data", "AllWells_20210427.csv"))
 ```
 
+In the Central Coast, there are 3,149 idle oil and gas wells
+
+### Create Oil Capping Jobs Data Frame
+
+We will predict the jobs created from capping all idle and active oil & gas wells in the Central Coast by 2045. 
+
+**Assumptions:**
+- The average lifespan of a well is 15-20 years, so all active wells will become idle by 2045
+- The number of new wells that will be drilled in that time is negligible 
+- It takes 0.25 FTE jobs to cap 1 oil well (source: ________)
 ```{r}
-# Look at all options for well status
-unique(wells$WellStatus)
-```
-
-```{r}
-# Filter to idle wells
-idle_wells <- wells |>
-    filter(WellStatus == "Idle" &
-            WellTypeLa == "Oil & Gas")
-
-# Filter to idle wells in the Central Coast
-idle_wells_central_coast <- idle_wells |>
-    filter(CountyName == "Santa Barbara" | 
-               CountyName == "San Luis Obispo" |
-               CountyName == "Ventura" &
-               WellTypeLa == "Oil & Gas")
-```
-
-There are 38,490 idle wells in this dataset, and 3,919 of them are in the central coast.
-Of the idle wells, 25,320 of them are of tyle Oil & Gas. In the central coast, its 3,149.
-
-```{r}
-# Calculate capping rate for a linear capping projection, starting with 0 wells capped at first year and increasing to all idle + active wells capped in final year (this will only work if the projections end at 2045 or later, because of the assumption that all currently active wells will become idle within the scope of the analysis. The average lifespan of a well is 15-20 years, and if we end projections earlier than 20 years, we will be counting active wells that may not be idle yet)
-
-# General formula will be capping_rate = idle_plus_active_wells / timeline_to_cap (ex: 2025-2045 = 20)
+############################# Santa Barbara #############################
 
 # Calculate total wells in Santa Barbara to be capped and save - include Idle, Active, and New
 idle_plus_active_wells_sb <- nrow(wells |>
@@ -904,19 +886,77 @@ oil_capping_jobs <- oil_capping_jobs |>
     mutate(total_wells_capped = round((year - 2025) * capping_rate, 0))
 
 # Calculate total jobs
+oil_capping_jobs_sb <- oil_capping_jobs |>
+    mutate(total_jobs_created = round(total_wells_capped * 0.25, 0),
+           county = "Santa Barbara")
+
+############################# San Luis Obispo #############################
+
+# Calculate total wells in Santa Barbara to be capped and save - include Idle, Active, and New
+idle_plus_active_wells_slo <- nrow(wells |>
+    filter(WellStatus %in% c("Idle", "Active", "New") &
+               WellTypeLa == "Oil & Gas" &
+               CountyName == "San Luis Obispo"))
+
+# Calculate the capping rate (number of wells to cap each year)
+capping_rate <- idle_plus_active_wells_slo / (2045-2025)
+
+# Make df with year
+oil_capping_jobs <- data.frame(
+    year = 2025:2045
+)
+
+# Calculate total wells capped at each year
 oil_capping_jobs <- oil_capping_jobs |>
-    mutate(total_jobs_created = round(total_wells_capped * 0.25, 0))
+    mutate(total_wells_capped = round((year - 2025) * capping_rate, 0))
+
+# Calculate total jobs
+oil_capping_jobs_slo <- oil_capping_jobs |>
+    mutate(total_jobs_created = round(total_wells_capped * 0.25, 0),
+           county = "San Luis Obispo")
+
+############################# Ventura #############################
+
+# Calculate total wells in Santa Barbara to be capped and save - include Idle, Active, and New
+idle_plus_active_wells_v <- nrow(wells |>
+    filter(WellStatus %in% c("Idle", "Active", "New") &
+               WellTypeLa == "Oil & Gas" &
+               CountyName == "Ventura"))
+
+# Calculate the capping rate (number of wells to cap each year)
+capping_rate <- idle_plus_active_wells_v / (2045-2025)
+
+# Make df with year
+oil_capping_jobs <- data.frame(
+    year = 2025:2045
+)
+
+# Calculate total wells capped at each year
+oil_capping_jobs <- oil_capping_jobs |>
+    mutate(total_wells_capped = round((year - 2025) * capping_rate, 0))
+
+# Calculate total jobs
+oil_capping_jobs_v <- oil_capping_jobs |>
+    mutate(total_jobs_created = round(total_wells_capped * 0.25, 0),
+           county = "Ventura")
 ```
 
 ```{r}
-ggplot(oil_capping_jobs) +
-    geom_point(aes(x = year, y = total_jobs_created),
-               color = "blue")
+# Combine oil capping jobs
+oil_capping_jobs <- rbind(oil_capping_jobs_slo, 
+                          oil_capping_jobs_sb, 
+                          oil_capping_jobs_v)
+
+# Clear environment
+remove(wells, capping_rate, idle_plus_active_wells_sb, 
+       idle_plus_active_wells_slo, idle_plus_active_wells_v,
+       oil_capping_jobs_sb, oil_capping_jobs_slo, oil_capping_jobs_v)
 ```
 
-This analysis pretty much shows that to cap all 1977 idle and active wells in Santa Barbara county by 2045, there will be 494 jobs created, or about 25 annual jobs created for 20 years. 
 
-
+- **SLO:** Capping all 337 idle and active oil and gas wells in San Luis Obispo county by 2045 will create about 4 annual jobs for 20 years for a total of 84 jobs
+- **SB:** Capping all 1,977 idle and active oil and gas wells in Santa Barbara county by 2045 will create about 25 annual jobs for 20 years for a total of 494 jobs
+- **Ventura:** Capping all 3,188 idle and active oil and gas wells in Ventura county by 2045 will create about 40 annual jobs for 20 years for a total of 797 jobs
 
 
 ## Land-Based Wind
@@ -1085,10 +1125,9 @@ calculate_land_wind_construction_jobs <- function(county, start_year, end_year, 
 }
 ```
 
-### Create Land-Based Wind Jobs DataFrame
+### Create Land-Based Wind Jobs Data Frame
 
 Land-based wind projections are not included in our analysis for reporting, because there are unclear capacity goals in the Central Coast. However, we wanted to include this technology option in our dashboard, in the case that land-based wind becomes an energy source that the central coast is interested in expanding. 
-
 The following code is just a test that the above function works as anticipated, and these results will not be incorporated into our data. 
 
 ```{r}
@@ -1118,7 +1157,58 @@ land_wind_om_test <- calculate_land_wind_om_jobs(county = "SB",
 
 Fossil fuel phaseout analysis here
 
-##################################################################################################################
+Okay, let's start by reading in the data from Deshmukh et al.. I am going to immediately filter to our counties of interest because the data set is huge.
+
+```{r}
+job_projections <- read_csv(here('county_oil_employment_projections.csv')) %>% 
+    filter(county %in% c('Santa Barbara','San Luis Obispo','Ventura'))
+```
+
+Now that we have all of the data for our three counties, let's filter to the scenario of a 2500 ft setback, reference case for oil_price_scenario, no excise tax, and no_prod_quota_scenario
+
+```{r}
+job_projections_clean <- job_projections %>% 
+    filter(excise_tax_scenario == 'no tax') %>% 
+    filter(setback_scenario == 'setback_2500ft') %>% 
+    filter(oil_price_scenario == 'reference case') %>% 
+    filter(prod_quota_scenario == 'no quota')
+```
+
+We can now visualize our three counties' direct employment for the years 2019-2023. This is the time chunk that BLS has their data. So first we are going to look at those years. Once we confirm that will be okay, we will visualize the rest of the data, showing the projections up through 2045.
+
+First, we'll do simple bar charts for each county and use patchwork to put it together
+```{r}
+ventura_current_emp_plot <- job_projections_clean %>% 
+    filter(county == 'Ventura' & year %in% c(2019:2023)) %>% 
+    ggplot(aes(x = year, y = c.dire_emp)) +
+    geom_col() +
+    labs(title = 'Ventura')
+
+sb_current_emp_plot <- job_projections_clean %>% 
+    filter(county == 'Santa Barbara' & year %in% c(2019:2023)) %>% 
+    ggplot(aes(x = year, y = c.dire_emp)) +
+    geom_col() +
+    labs(title = 'Santa Barbara')
+
+slo_current_emp_plot <- job_projections_clean %>% 
+    filter(county == 'San Luis Obispo' & year %in% c(2019:2023)) %>% 
+    ggplot(aes(x = year, y = c.dire_emp)) +
+    geom_col() +
+    labs(title = 'San Luis Obispo')
+
+all_counties_current_emp_plot <- ventura_current_emp_plot + sb_current_emp_plot + slo_current_emp_plot
+```
+
+To make it cleaner, let's try using a stacked bar chart
+```{r}
+stacked_area_all_counties_current_emp <- job_projections_clean %>%
+    filter(year %in% c(2019:2023)) %>% 
+    ggplot(aes(x = year, y = c.dire_emp, fill = county)) +
+    geom_bar(stat = 'identity', position = 'stack') +
+    labs(title = 'Direct Employment in Oil 2019-2023') +
+    scale_fill_manual(values = c('Ventura' = '#4a4e69', 'Santa Barbara' = '#9a8c98', 'San Luis Obispo' = '#f0e68c')) +
+    theme_minimal()
+```
 
 # Plots
 
@@ -1462,7 +1552,7 @@ ggsave("osw_direct_jobs_stacked_bar_faculty_review.png",
 ## Plots for advocacy meeting
 
 ```{r}
-# high ambition 2045 goal
+# high ambition 2045 goal offshore wind
 osw_2045_high <- osw_all %>% 
     filter(ambition =="High" &
                type == 'direct' &
@@ -1492,7 +1582,7 @@ osw_2045_high_plot <- ggplot(osw_2045_high, aes(x = year, y = n_jobs, group = oc
 ```
 
 ```{r}
-# low ambition 2045 goal
+# low ambition 2045 goal offshore wind
 osw_2045_low <- osw_all %>% 
     filter(ambition =="Low" &
                type == 'direct' &
@@ -1521,3 +1611,336 @@ osw_2045_low_plot <- ggplot(osw_2045_low, aes(x = year, y = n_jobs, group = occu
 #ggsave('plots/osw_low_advocacy.png', osw_2045_low_plot, width = 12, height = 10)
 ```
 
+```{r}
+# JEDI outputs for 1 GW of OSW in CC conglomerate for construction and O&M in data frame
+cc_1gw_jobs <- data.frame(
+  Category = rep(c("Construction", "Operations & Maintenance"), each = 3),
+  Type = c("Direct", "Indirect", "Induced"),
+  Jobs = c(82, 2571, 781, 127, 126, 131)
+)
+
+# plot those numbers as a dodged bar plot
+ggplot(cc_1gw_jobs, aes(x = Type, y = Jobs, group = Category)) +
+    geom_col(position = 'dodge', aes(fill = Category)) +
+    scale_fill_manual(labels = c("Construction Jobs", "Operations & Maintenance Jobs"),
+                      values = c("#4a4e69", "#9a8c98")) +
+    labs(title = "Jobs per 1 GW OSW in the Central Coast",
+     y = "FTE Jobs") +
+    theme_minimal() +
+    theme(
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 24, margin = margin(5,20,0,10)),
+        axis.text = element_text(size = 20), 
+        plot.title = element_text(size=28),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 20),
+        legend.position = "bottom",
+        plot.background = element_rect(fill = "#EFEFEF"),
+        panel.grid = element_line(color = "grey85")
+    )
+```
+
+```{r}
+# high ambition 2045 goal utility solar SB
+pv_2045_high_sb <- pv_all %>% 
+    filter(county == "SB" &
+               technology == "Utility PV" &
+               ambition =="High" &
+               type == 'direct' &
+               occupation %in% c('O&M', 'Construction'))
+
+pv_2045_high_sb_plot <- ggplot(pv_2045_high_sb, aes(x = year, y = n_jobs, group = occupation)) +
+    geom_col(aes(fill = occupation)) +
+    scale_fill_manual(labels = c("Construction Jobs", "Operations & Maintenance Jobs"),
+                      values = c("#4a4e69", "#9a8c98")) +
+    scale_y_continuous(limits = c(0, 250)) +
+    labs(title = "Projected direct jobs in Santa Barbara from Utility PV development",
+     y = "FTE Jobs") +
+    theme_minimal() +
+    theme(
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 24, margin = margin(5,20,0,10)),
+        axis.text = element_text(size = 20), 
+        plot.title = element_text(size=28),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 20),
+        legend.position = "bottom",
+        plot.background = element_rect(fill = "#EFEFEF"),
+        panel.grid = element_line(color = "grey85")
+    )
+
+#ggsave('plots/pv_high_sb_advocacy.png', pv_2045_high_sb_plot, width = 12, height = 10)
+```
+
+```{r}
+# low ambition 2045 goal utility solar SB
+pv_2045_low_sb <- pv_all %>% 
+    filter(county == "SB" &
+               technology == "Utility PV" &
+               ambition == "Low" &
+               type == 'direct' &
+               occupation %in% c('O&M', 'Construction'))
+
+pv_2045_low_sb_plot <- ggplot(pv_2045_low_sb, aes(x = year, y = n_jobs, group = occupation)) +
+    geom_col(aes(fill = occupation)) +
+    scale_fill_manual(labels = c("Construction Jobs", "Operations & Maintenance Jobs"),
+                      values = c("#4a4e69", "#9a8c98")) +
+    scale_y_continuous(limits = c(0, 250)) +
+    labs(title = "Projected direct jobs in Santa Barbara from Utility PV development",
+     y = "FTE Jobs") +
+    theme_minimal() +
+    theme(
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 24, margin = margin(5,20,0,10)),
+        axis.text = element_text(size = 20), 
+        plot.title = element_text(size=28),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 20),
+        legend.position = "bottom",
+        plot.background = element_rect(fill = "#EFEFEF"),
+        panel.grid = element_line(color = "grey85")
+    )
+
+#ggsave('plots/pv_high_sb_advocacy.png', pv_2045_high_sb_plot, width = 12, height = 10)
+```
+
+
+```{r}
+# high ambition 2045 goal utility solar Ventura
+pv_2045_high_v <- pv_all %>% 
+    filter(county == "V" &
+               technology == "Utility PV" &
+               ambition =="High" &
+               type == 'direct' &
+               occupation %in% c('O&M', 'Construction'))
+
+pv_2045_high_v_plot <- ggplot(pv_2045_high_v, aes(x = year, y = n_jobs, group = occupation)) +
+    geom_col(aes(fill = occupation)) +
+    scale_fill_manual(labels = c("Construction Jobs", "Operations & Maintenance Jobs"),
+                      values = c("#4a4e69", "#9a8c98")) +
+    scale_y_continuous(limits = c(0, 20)) +
+    labs(title = "Projected direct jobs in Ventura from Utility PV development",
+     y = "FTE Jobs") +
+    theme_minimal() +
+    theme(
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 24, margin = margin(5,20,0,10)),
+        axis.text = element_text(size = 20), 
+        plot.title = element_text(size=28),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 20),
+        legend.position = "bottom",
+        plot.background = element_rect(fill = "#EFEFEF"),
+        panel.grid = element_line(color = "grey85")
+    )
+
+ggsave('plots/pv_high_v_advocacy.png', pv_2045_high_v_plot, width = 12, height = 10)
+```
+
+```{r}
+# low ambition 2045 goal utility solar Ventura
+pv_2045_low_v <- pv_all %>% 
+    filter(county == "V" &
+               technology == "Utility PV" &
+               ambition == "Low" &
+               type == 'direct' &
+               occupation %in% c('O&M', 'Construction'))
+
+pv_2045_low_v_plot <- ggplot(pv_2045_low_v, aes(x = year, y = n_jobs, group = occupation)) +
+    geom_col(aes(fill = occupation)) +
+    scale_fill_manual(labels = c("Construction Jobs", "Operations & Maintenance Jobs"),
+                      values = c("#4a4e69", "#9a8c98")) +
+    scale_y_continuous(limits = c(0, 20)) +
+    labs(title = "Projected direct jobs in Ventura from Utility PV development",
+     y = "FTE Jobs") +
+    theme_minimal() +
+    theme(
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 24, margin = margin(5,20,0,10)),
+        axis.text = element_text(size = 20), 
+        plot.title = element_text(size=28),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 20),
+        legend.position = "bottom",
+        plot.background = element_rect(fill = "#EFEFEF"),
+        panel.grid = element_line(color = "grey85")
+    )
+
+#ggsave('plots/pv_high_v_advocacy.png', pv_2045_high_v_plot, width = 12, height = 10)
+```
+
+
+```{r}
+# high ambition 2045 goal utility solar SLO
+pv_2045_high_slo <- pv_all %>% 
+    filter(county == "SLO" &
+               technology == "Utility PV" &
+               ambition =="High" &
+               type == 'direct' &
+               occupation %in% c('O&M', 'Construction'))
+
+pv_2045_high_slo_plot <- ggplot(pv_2045_high_slo, aes(x = year, y = n_jobs, group = occupation)) +
+    geom_col(aes(fill = occupation)) +
+    scale_fill_manual(labels = c("Construction Jobs", "Operations & Maintenance Jobs"),
+                      values = c("#4a4e69", "#9a8c98")) +
+    scale_y_continuous(limits = c(0, 4000)) +
+    labs(title = "Projected direct jobs in San Luis Obispo from Utility PV development",
+     y = "FTE Jobs") +
+    theme_minimal() +
+    theme(
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 24, margin = margin(5,20,0,10)),
+        axis.text = element_text(size = 20), 
+        plot.title = element_text(size=28),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 20),
+        legend.position = "bottom",
+        plot.background = element_rect(fill = "#EFEFEF"),
+        panel.grid = element_line(color = "grey85")
+    )
+
+#ggsave('plots/pv_high_slo_advocacy.png', pv_2045_high_slo_plot, width = 12, height = 10)
+```
+
+```{r}
+# low ambition 2045 goal utility solar SLO
+pv_2045_low_slo <- pv_all %>% 
+    filter(county == "SLO" &
+               technology == "Utility PV" &
+               ambition == "Low" &
+               type == 'direct' &
+               occupation %in% c('O&M', 'Construction') &
+               year %in% c(2025:2045))
+
+pv_2045_low_slo_plot <- ggplot(pv_2045_low_slo, aes(x = year, y = n_jobs, group = occupation)) +
+    geom_col(aes(fill = occupation)) +
+    scale_fill_manual(labels = c("Construction Jobs", "Operations & Maintenance Jobs"),
+                      values = c("#4a4e69", "#9a8c98")) +
+    scale_y_continuous(limits = c(0, 4000)) +
+    labs(title = "Projected direct jobs in San Luis Obispo from Utility PV development",
+     y = "FTE Jobs") +
+    theme_minimal() +
+    theme(
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 24, margin = margin(5,20,0,10)),
+        axis.text = element_text(size = 20), 
+        plot.title = element_text(size=28),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 20),
+        legend.position = "bottom",
+        plot.background = element_rect(fill = "#EFEFEF"),
+        panel.grid = element_line(color = "grey85")
+    )
+
+#ggsave('plots/pv_high_advocacy.png', pv_2045_high_plot, width = 12, height = 10)
+```
+
+<<<<<<< HEAD
+Specific number of job results - Utility Solar
+```{r}
+rooftop_jobs_sb <- pv_all %>% 
+    filter(county == "SB" &
+               technology == "Rooftop PV" &
+               year == "2045" &
+               ambition == "High" &
+               type == "induced")
+
+rooftop_jobs_slo <- pv_all %>% 
+    filter(county == "SLO" &
+               technology == "Rooftop PV" &
+               year == "2045" &
+               ambition == "High" &
+               type == "induced")
+
+rooftop_jobs_v <- pv_all %>% 
+    filter(county == "V" &
+               technology == "Rooftop PV" &
+               year == "2045" &
+               ambition == "High" &
+               type == "induced")
+```
+
+```{r}
+osw_jobs <- osw_all %>%
+    filter(ambition == "Low" &
+               year == "2045" &
+               type == "indirect")
+```
+
+```{r}
+# low ambition 2045 goal utility solar dodged by county
+pv_2045_low <- pv_all %>% 
+    filter(county %in% c("SLO", "SB", "V") &
+               technology == "Utility PV" &
+               ambition == "Low" &
+               type == 'direct' &
+               occupation %in% c('O&M', 'Construction') &
+               year %in% c(2025:2045))
+
+pv_2045_low_plot <- ggplot(pv_2045_low, aes(x = year, y = n_jobs, group = occupation)) +
+    geom_col(position = position_dodge2(preserve = "single"), aes(group = interaction(county, occupation))) +
+    facet_wrap(~county) +
+    scale_fill_manual(labels = c("Construction Jobs", "Operations & Maintenance Jobs"),
+                      values = c("#4a4e69", "#9a8c98")) +
+    labs(title = "Projected direct jobs from Utility PV development",
+     y = "FTE Jobs") +
+    theme_minimal() +
+    theme(
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 24, margin = margin(5,20,0,10)),
+        axis.text = element_text(size = 20), 
+        plot.title = element_text(size=28),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 20),
+        legend.position = "bottom",
+        plot.background = element_rect(fill = "#EFEFEF"),
+        panel.grid = element_line(color = "grey85")
+    )
+```
+
+=======
+## Analysis for Lucas 4/21
+
+```{r}
+sb <- pv_and_osw |>
+    filter(type == "direct") |>
+    filter(ambition == "High") |>
+    filter(county != "SLO") |>
+    filter(county != "V")
+
+write_csv(sb, here("data", "sb_direct_high.csv"))
+```
+
+
+```{r}
+# Read in SB high ambition dataset
+sb_direct_high <- read_csv(here("data", "sb_direct_high.csv"))
+
+# Calculate total construction jobs for each tech ----
+
+#osw
+c_tot_osw <- sb_direct_high |>
+    filter(technology == "Offshore Wind") |>
+    filter(occupation == "Construction")
+
+c_tot_osw = round(sum(c_tot_osw$n_jobs), 0)
+
+# utility pv
+c_tot_u_pv <- sb_direct_high |>
+    filter(technology == "Utility PV") |>
+    filter(occupation == "Construction")
+
+c_tot_u_pv = round(sum(c_tot_u_pv$n_jobs), 0)
+
+# rooftop pv
+c_tot_r_pv <- sb_direct_high |>
+    filter(technology == "Rooftop PV") |>
+    filter(occupation == "Construction")
+
+c_tot_r_pv = round(sum(c_tot_r_pv$n_jobs), 0)
+```
+
+
+
+
+>>>>>>> c249b37262d16c703380dfd8cb3c421ea62fda55
