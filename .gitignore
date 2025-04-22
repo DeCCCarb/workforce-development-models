@@ -5,4 +5,4 @@
 .DS_Store
 
 /data/
-/plots/
+/plots/.DS_Store
