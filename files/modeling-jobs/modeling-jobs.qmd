@@ -1149,56 +1149,34 @@ land_wind_om_test <- calculate_land_wind_om_jobs(county = "SB",
                                                  induced_jobs = 1)
 ```
 
-
-
-
 ## Fossil Fuel Phaseout
-
-Fossil fuel phaseout analysis here
 
 Okay, let's start by reading in the data from Deshmukh et al.. I am going to immediately filter to our counties of interest because the data set is huge.
 
 ```{r}
-job_projections <- read_csv(here('county_oil_employment_projections.csv')) %>% 
+job_projections <- read_csv(here('data','county_oil_employment_projections.csv')) %>% 
     filter(county %in% c('Santa Barbara','San Luis Obispo','Ventura'))
 ```
 
 Now that we have all of the data for our three counties, let's filter to the scenario of a 2500 ft setback, reference case for oil_price_scenario, no excise tax, and no_prod_quota_scenario
 
 ```{r}
-job_projections_clean <- job_projections %>% 
+job_projections_current <- job_projections %>% 
     filter(excise_tax_scenario == 'no tax') %>% 
     filter(setback_scenario == 'setback_2500ft') %>% 
     filter(oil_price_scenario == 'reference case') %>% 
-    filter(prod_quota_scenario == 'no quota')
+    filter(prod_quota_scenario == 'no quota') %>% 
+    filter(year %in% c(2025:2045))
+
+job_projections_5280 <- job_projections %>% 
+    filter(excise_tax_scenario == 'no tax') %>% 
+    filter(setback_scenario == 'setback_5280ft') %>% 
+    filter(oil_price_scenario == 'reference case') %>% 
+    filter(prod_quota_scenario == 'no quota') %>% 
+    filter(year %in% c(2025:2045))
 ```
 
-We can now visualize our three counties' direct employment for the years 2019-2023. This is the time chunk that BLS has their data. So first we are going to look at those years. Once we confirm that will be okay, we will visualize the rest of the data, showing the projections up through 2045.
-
-First, we'll do simple bar charts for each county and use patchwork to put it together
-```{r}
-ventura_current_emp_plot <- job_projections_clean %>% 
-    filter(county == 'Ventura' & year %in% c(2019:2023)) %>% 
-    ggplot(aes(x = year, y = c.dire_emp)) +
-    geom_col() +
-    labs(title = 'Ventura')
-
-sb_current_emp_plot <- job_projections_clean %>% 
-    filter(county == 'Santa Barbara' & year %in% c(2019:2023)) %>% 
-    ggplot(aes(x = year, y = c.dire_emp)) +
-    geom_col() +
-    labs(title = 'Santa Barbara')
-
-slo_current_emp_plot <- job_projections_clean %>% 
-    filter(county == 'San Luis Obispo' & year %in% c(2019:2023)) %>% 
-    ggplot(aes(x = year, y = c.dire_emp)) +
-    geom_col() +
-    labs(title = 'San Luis Obispo')
-
-all_counties_current_emp_plot <- ventura_current_emp_plot + sb_current_emp_plot + slo_current_emp_plot
-```
-
-To make it cleaner, let's try using a stacked bar chart
+We can now visualize our three counties' direct employment for the years 2019-2023. This is the time chunk that BLS has their data. So first we are going to look at those years. Once we confirm that will be okay, we will visualize the rest of the data, showing the projections up through 2045. Let's try using a stacked bar chart. 
 ```{r}
 stacked_area_all_counties_current_emp <- job_projections_clean %>%
     filter(year %in% c(2019:2023)) %>% 
@@ -1208,6 +1186,37 @@ stacked_area_all_counties_current_emp <- job_projections_clean %>%
     scale_fill_manual(values = c('Ventura' = '#4a4e69', 'Santa Barbara' = '#9a8c98', 'San Luis Obispo' = '#f0e68c')) +
     theme_minimal()
 ```
+
+Okay, now that we've visualized the current fossil fuel employment, we can visualize the projections through 2045.
+
+First we'll use the scenario that is most closely aligned to our current policy situation: a 2500 ft setback, reference case for oil_price_scenario, no excise tax, and no_prod_quota_scenario
+
+```{r}
+projections_plot1 <- job_projections_current %>% 
+    group_by(county) %>% 
+    ggplot(aes(x = year, y = total_emp, fill = county)) +
+    geom_bar(stat = 'identity') +
+    scale_fill_manual(values = c('Ventura' = '#4a4e69', 'Santa Barbara' = '#9a8c98', 'San Luis Obispo' = '#f0e68c')) +
+    labs(title = 'Direct fossil fuel employment phaseout 2025-2045: 2500 ft setback policy',
+         y = 'Total direct employment') +
+    theme_minimal() +
+    theme(axis.title.x = element_blank())
+```
+
+Next we'll see if there was a more ambitious scenario: 1000 ft setback, reference case for oil_price_scenario, no excise tax, and no_prod_quota_scenario
+
+```{r}
+projections_plot2 <- job_projections_5280 %>% 
+    group_by(county) %>% 
+    ggplot(aes(x = year, y = total_emp, fill = county)) +
+    geom_bar(stat = 'identity') +
+    scale_fill_manual(values = c('Ventura' = '#4a4e69', 'Santa Barbara' = '#9a8c98', 'San Luis Obispo' = '#f0e68c')) +
+    labs(title = 'Direct fossil fuel employment phaseout 2025-2045: 5280 ft setback policy',
+         y = 'Total direct employment') +
+    theme_minimal() +
+    theme(axis.title.x = element_blank())
+```
+
 
 # Plots
 
