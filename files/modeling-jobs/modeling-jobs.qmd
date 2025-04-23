@@ -1159,7 +1159,7 @@ job_projections <- read_csv(here('data','county_oil_employment_projections.csv')
     filter(county %in% c('Santa Barbara','San Luis Obispo','Ventura'))
 ```
 
-Now that we have all of the data for our three counties, let's filter to the scenario of a 2500 ft setback, reference case for oil_price_scenario, no excise tax, and no_prod_quota_scenario
+Now that we have all of the data for our three counties, let's filter to the scenario of a 2500 ft setback, reference case for oil_price_scenario, no excise tax, and no_prod_quota_scenario. This is the scenario that is closest to a business as normal approach 
 
 ```{r}
 job_projections_current <- job_projections %>% 
@@ -1168,7 +1168,9 @@ job_projections_current <- job_projections %>%
     filter(oil_price_scenario == 'reference case') %>% 
     filter(prod_quota_scenario == 'no quota') %>% 
     filter(year %in% c(2025:2045))
+```
 
+```{r}
 job_projections_5280 <- job_projections %>% 
     filter(excise_tax_scenario == 'no tax') %>% 
     filter(setback_scenario == 'setback_5280ft') %>% 
@@ -1204,7 +1206,7 @@ projections_plot1 <- job_projections_current %>%
     theme(axis.title.x = element_blank())
 ```
 
-Next we'll see if there was a more ambitious scenario: 1000 ft setback, reference case for oil_price_scenario, no excise tax, and no_prod_quota_scenario
+Next we'll see if there was a more ambitious scenario: 5280 ft setback, reference case for oil_price_scenario, no excise tax, and no_prod_quota_scenario
 
 ```{r}
 projections_plot2 <- job_projections_5280 %>% 
@@ -1218,6 +1220,47 @@ projections_plot2 <- job_projections_5280 %>%
     theme(axis.title.x = element_blank())
 ```
 
+Okay, now that we've tried it with a couple of scenarios, let's try to turn it into a function
+```{r}
+#' Calculate direct employment in fossil fuels given certain policy scenario. 
+#'
+#' @param excise_tax Character string. Could be `no tax` or `tax_setback_1000ft`.
+#' @param setback Character string. Could be `setback_1000ft`, `setback_2500ft`, `setback_5280ft`, or `no_setback`.
+#' @param oil_price Character string. Could be `low oil price`, `high oil price`, or `reference case`.
+#' @param prod_quota Character string. Could be `no quota`.
+#'
+#' @return Plot showing direct employment under given scenario
+#'
+#' @example
+#' Direct fossil fuel employment phaseout 2025–2045: 5280 ft setback policy
+#' plot_employment_projection(setback = 'setback_5280ft')
+
+plot_employment_projection <- function(excise_tax = 'no tax', setback = 'setback_2500ft',
+                                       oil_price = 'reference case', prod_quota = 'no quota') {
+  
+  # Filter data according to function inputs
+  filtered_data <- job_projections %>%
+    filter(excise_tax_scenario == excise_tax,
+      setback_scenario == setback,
+      oil_price_scenario == oil_price,
+      prod_quota_scenario == prod_quota,
+      year %in% c(2025:2045))
+  
+  # Generate plot
+  plot <- filtered_data %>%
+    group_by(county) %>%
+    ggplot(aes(x = year, y = total_emp, fill = county)) +
+    geom_bar(stat = 'identity') +
+    scale_fill_manual(values = c('Ventura' = '#4a4e69','Santa Barbara' = '#9a8c98','San Luis Obispo' = '#f0e68c')) +
+    labs(title = paste('Direct fossil fuel employment phaseout 2025–2045:',
+                    gsub("_", " ", setback), 'policy'),
+      y = 'Total direct employment') +
+    theme_minimal() +
+    theme(axis.title.x = element_blank())
+  
+  return(plot)
+}
+```
 
 # Plots
 
