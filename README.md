@@ -13,6 +13,9 @@ This repository contains our models for projecting the number of jobs created fr
 
 
 ### File contents & structure
+
+The central file in this repository is `modeling-jobs.qmd`, and is where the analysis and models are.
+
 ```bash
 ├── files/
 │   ├── faculty_review/
