@@ -2,13 +2,16 @@
 
 ## Functions for calculating job growth and loss
 
-Repository containing code for using JEDI outputs to estimate workforce development. It also holds all of our outputs that we generated for our faculty review in March.
+This repository contains our models for projecting the number of jobs created from floating offshore wind, utility and rooftop solar, onshore wind, and onshore oil well capping. Included are visualizations of the results of these models, as well as the number of jobs lost from phasing out fossil fuels projected by Deshmukh *et. al.*
+
 
 ### Authors & contributors
 
 - [Brooke Grazda](https://github.com/bgrazda)
 - [Marina Kochuten](https://github.com/marinakochuten)
 - [Liz Peterson](https://github.com/egp4aq)
+
+
 ### File contents & structure
 ```bash
 ├── files/
