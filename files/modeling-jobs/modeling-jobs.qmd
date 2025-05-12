@@ -2204,15 +2204,15 @@ total_osw_jobs <- ggplot(osw_total_jobs,
         values = c("#3A8398", "#A3BDBE")
     ) +
     scale_y_continuous(labels = scales::comma,
-                       breaks = scales::breaks_pretty(n = 10)) +
+                       breaks = seq(from=2000, to=10000, by = 2000)) +
     scale_x_discrete(breaks = scales::breaks_pretty(n = 5)) +
-    labs(title = "Total Projected Jobs From Floating Offshore Wind 2025 - 2045",
+    labs(title = "Total Projected Jobs From OSW 2025-2045",
         y = "Full-time Equivalent Jobs"
     ) +
      theme_minimal(base_size = 14) +
     theme(
         # Title
-        plot.title = element_text(hjust = 0.5, size = 18, face = "bold", margin = margin(b = 15)),
+        plot.title = element_text(hjust = 0.5, size = 16, face = "bold", margin = margin(b = 15)),
         
         # Axes
         axis.title.x = element_blank(),
@@ -2235,17 +2235,196 @@ ggsave(here::here('plots', 'technical-documentation', 'total_osw_jobs.png'), tot
 # Capacity 
 
 osw_high_cap <- osw_all |>
-    group_by(county, year) |>
-    summarise(cap = total_capacity_mw, .groups = "drop")
+    filter(ambition == "High") |>
+    group_by(year) |>
+    summarise(cap = total_capacity_gw, .groups = "drop")
+
+
+total_osw_cap <- 
+    ggplot(osw_high_cap,
+       aes(x = as.factor(year), y = cap)) +
+    geom_point(color = "#3A8398", size = 3) +
+    scale_y_continuous(labels = scales::comma) +
+    scale_x_discrete(breaks = scales::breaks_pretty(n = 5)) +
+    labs(
+        title = "OSW Total Capacity Projections 2025-2045",
+        y = "Capacity (GW)"
+    ) +
+    
+    theme_minimal(base_size = 14) +
+    theme(
+        # Title
+        plot.title = element_text(hjust = 0.5, size = 16, face = "bold", margin = margin(b = 15)),
+        
+        # Axes
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 16, margin = margin(t = 0, r = 10, b = 10, l = 0)),
+        axis.text.x = element_text(size = 14, margin = margin(t = 10)),
+        axis.text.y = element_text(size = 14, face = "bold", margin = margin(r = 5)),
+
+        # Plot spacing
+        plot.margin = margin(20, 20, 20, 20)
+    )
+
+ggsave(here::here('plots', 'technical-documentation', 'total_osw_cap.png'), total_osw_cap, width = 10, height = 6)
+
+library(patchwork)
+
+osw_td_plot <- total_osw_jobs + total_osw_cap
+
+ggsave(here::here('plots', 'technical-documentation', 'osw_td_plot.png'), osw_td_plot, width = 11, height = 7)
 ```
 
 ```{r}
 ##### Oil Well Capping #####
 
+# Join all oil capping counties
+oil_capping <- rbind(oil_capping_jobs_sb,
+                     oil_capping_jobs_slo,
+                     oil_capping_jobs_v)
+
+# Capping rates ----
+# SANTA BARBARA
+max_y <- 1977
+
+sb_oil_cap_plot <- ggplot(oil_capping_jobs_sb) +
+    geom_point(aes(x = as.factor(year), y = total_wells_capped), color = "#3A8398", size = 3) +
+    geom_hline(yintercept = max_y, linetype = "dashed", color = "#3A8398") +
+    annotate("text", x = 1, y = max_y, label = "Idle + active oil and gas wells", 
+             hjust = 0, vjust = -0.5, size = 5, color = "#3A8398", fontface = "bold") +
+    scale_x_discrete(breaks = scales::breaks_pretty(n = 5)) +
+    scale_y_continuous(
+        breaks = c(500,1000,1500,1977),
+        labels = scales::label_comma()
+    ) +
+    labs(
+        title = "Santa Barbara",
+        y = "Number of Wells Capped"
+    ) +
+#    facet_wrap(~county, scales = "free_y") +
+    theme_minimal(base_size = 14) +
+    theme(
+        plot.title = element_text(hjust = 0.5, size = 18, face = "bold", margin = margin(b = 15)),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.x = element_text(size = 14, margin = margin(t = 10)),
+        axis.text.y = element_text(size = 14, face = "bold", margin = margin(r = 5)),
+        plot.margin = margin(20, 20, 20, 20)
+    )
+
+# SLO
+max_y <- 337
+
+slo_oil_cap_plot <- ggplot(oil_capping_jobs_slo) +
+    geom_point(aes(x = as.factor(year), y = total_wells_capped), color = "#3A8398", size = 3) +
+    geom_hline(yintercept = max_y, linetype = "dashed", color = "#3A8398") +
+    annotate("text", x = 1, y = max_y, label = "Idle + active oil and gas wells", 
+             hjust = 0, vjust = -0.5, size = 5, color = "#3A8398", fontface = "bold") +
+    scale_x_discrete(breaks = scales::breaks_pretty(n = 5)) +
+    scale_y_continuous(
+        breaks = c(100,200, 300, 337),
+        labels = scales::label_comma()
+    ) +
+    labs(
+        title = "San Luis Obispo"
+    ) +
+#    facet_wrap(~county, scales = "free_y") +
+    theme_minimal(base_size = 14) +
+    theme(
+        plot.title = element_text(hjust = 0.5, size = 18, face = "bold", margin = margin(b = 15)),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.x = element_text(size = 14, margin = margin(t = 10)),
+        axis.text.y = element_text(size = 14, face = "bold", margin = margin(r = 5)),
+        plot.margin = margin(20, 20, 20, 20)
+    )
+
+# Ventura
+max_y <- 3188
+
+v_oil_cap_plot <- ggplot(oil_capping_jobs_v) +
+    geom_point(aes(x = as.factor(year), y = total_wells_capped), color = "#3A8398", size = 3) +
+    geom_hline(yintercept = max_y, linetype = "dashed", color = "#3A8398") +
+    annotate("text", x = 1, y = max_y, label = "Idle + active oil and gas wells", 
+             hjust = 0, vjust = -0.5, size = 5, color = "#3A8398", fontface = "bold") +
+    scale_x_discrete(breaks = scales::breaks_pretty(n = 5)) +
+    scale_y_continuous(
+        breaks = c(500,1500,2500, 3188),
+        labels = scales::label_comma()
+    ) +
+    labs(
+        title = "Ventura",
+        y = "Number of Wells Capped"
+    ) +
+#    facet_wrap(~county, scales = "free_y") +
+    theme_minimal(base_size = 14) +
+    theme(
+        plot.title = element_text(hjust = 0.5, size = 18, face = "bold", margin = margin(b = 15)),
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 16, margin = margin(t = 0, r = 10, b = 10, l = 0)),
+        axis.text.x = element_text(size = 14, margin = margin(t = 10)),
+        axis.text.y = element_text(size = 14, face = "bold", margin = margin(r = 5)),
+        plot.margin = margin(20, 20, 20, 20)
+    )
+
+v_oil_cap_plot
+
+oil_capping_plot <- (v_oil_cap_plot + sb_oil_cap_plot + slo_oil_cap_plot) +
+  plot_annotation(
+    title = "Oil Well Capping Rate 2025–2045",
+    theme = theme(
+      plot.title = element_text(
+        hjust = 0.5,
+        size = 18,
+        face = "bold",
+        margin = margin(b = 20)
+      )
+    )
+  )
+
+ggsave(here::here('plots', 'technical-documentation', 'oil_cap_rate_plot.png'), oil_capping_plot, width = 13, height = 7)
 
 ```
 
+```{r}
+# Jobs ----
+oil_capping$county <- factor(oil_capping$county, levels = c("Ventura", "Santa Barbara", "San Luis Obispo"))
 
+oil_cap_job_plot <- ggplot(oil_capping) +
+    geom_point(aes(x = as.factor(year), y = total_jobs_created), color = "#3A8398", size = 3) +
+    scale_x_discrete(breaks = scales::breaks_pretty(n = 5)) +
+    scale_y_continuous(
+        breaks = scales::breaks_pretty(),
+        labels = scales::label_comma()
+    ) +
+    labs(
+        title = "Total Jobs Created from Oil Well Capping",
+        y = "Total Full-time Equivalent Jobs Created"
+    ) +
+    facet_wrap(
+        ~county, scales = "free_y", 
+       ) +
+    theme_minimal(base_size = 14) +
+    theme(
+        # Title
+        plot.title = element_text(hjust = 0.5, size = 18, face = "bold", margin = margin(b = 15)),
+        
+        # Axes
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 16, margin = margin(t = 0, r = 10, b = 10, l = 0)),
+        axis.text.x = element_text(size = 14, margin = margin(t = 10)),
+        axis.text.y = element_text(size = 14, face = "bold", margin = margin(r = 5)),
+        
+        # Facet strip
+        strip.text = element_text(face = "bold", size = 16),
+        
+        # Plot spacing
+        plot.margin = margin(20, 20, 20, 20)
+    )
+
+
+ggsave(here::here('plots', 'technical-documentation', 'oil_cap_job_plot.png'), oil_cap_job_plot, width = 10, height = 7)
+```
 
 
 
