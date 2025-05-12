@@ -1950,6 +1950,306 @@ pv_2045_low_plot <- ggplot(pv_2045_low, aes(x = year, y = n_jobs, group = occupa
     )
 ```
 
+
+## Plots for technical documentation
+```{r}
+utility_high <- pv_all %>% 
+    filter(county %in% c("SLO", "SB", "V") &
+               technology == "Utility PV" &
+               ambition == "High" &
+               occupation %in% c('O&M', 'Construction') &
+               year %in% c(2025:2045))
+
+utility_high <- utility_high |>
+    group_by(year, occupation, county) |>
+    summarise(n_jobs = sum(n_jobs))
+
+utility_high$county <- factor(utility_high$county, levels = c("SLO", "SB", "V"))
+
+
+
+##### Utility Solar #####
+# TOTAL TOTAL jobs (direct and indirect and induced)
+total_util_jobs_facet <- ggplot(utility_high,
+       aes(
+           x = as.factor(year),
+           y = round(n_jobs, 0),
+           group = occupation
+       )) +
+    geom_col(aes(fill = occupation)) +
+    scale_fill_manual(
+        labels = c("Construction Jobs", "Operations & Maintenance Jobs"),
+        values = c("#3A8398", "#A3BDBE")
+    ) +
+    scale_y_continuous(labels = scales::comma) +
+    scale_x_discrete(breaks = scales::breaks_pretty(n = 2)) +
+    labs(
+        title = "Total Projected Jobs From Utility Solar 2025 - 2045",
+        y = "Full-time Equivalent Jobs"
+    ) +
+    theme_minimal(base_size = 14) +
+    theme(
+        # Title
+        plot.title = element_text(hjust = 0.5, size = 18, face = "bold", margin = margin(b = 15)),
+        
+        # Axes
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 16, margin = margin(t = 0, r = 10, b = 10, l = 0)),
+        axis.text.x = element_text(size = 14, margin = margin(t = 10)),
+        axis.text.y = element_text(face = "bold", size = 14, margin = margin(r = 5)),
+        
+        # Legend
+        legend.title = element_blank(),
+        legend.text = element_text(size = 14),
+        legend.position = "bottom",
+        
+        # Facet strip
+        strip.text = element_text(face = "bold", size = 16),
+        
+        # Overall plot margin
+        plot.margin = margin(20, 20, 20, 20)
+    ) +
+    facet_wrap(
+        ~county,
+        scale = "free_y",
+        labeller = labeller(county = c(
+            "SB" = "Santa Barbara",
+            "SLO" = "San Luis Obispo",
+            "V" = "Ventura"
+        ))
+    )
+
+
+ggsave(here::here('plots', 'technical-documentation', 'total_util_jobs_facet.png'), total_util_jobs_facet, width = 10, height = 6)
+
+# Capacity
+utility_high_cap <- utility_high |>
+    group_by(county, year) |>
+    summarise(cap = total_capacity_mw)
+
+utility_high_cap$county <- factor(utility_high$county, levels = c("SLO", "SB", "V"))
+
+
+# Plot
+total_util_cap_facet <- ggplot(utility_high_cap,
+       aes(x = as.factor(year), y = cap)) +
+    geom_point(color = "#3A8398", size = 3) +
+    scale_y_continuous(labels = scales::comma) +
+    scale_x_discrete(breaks = scales::breaks_pretty(n = 2)) +
+    labs(
+        title = "Utility Solar Total Capacity Projections 2025 - 2045",
+        y = "Capacity (MW)"
+    ) +
+    facet_wrap(~county, scales = "free_y",
+               labeller = labeller(county = c(
+                   "SLO" = "San Luis Obispo",
+                   "SB" = "Santa Barbara",
+                   "V" = "Ventura"
+               ))) +
+    theme_minimal(base_size = 14) +
+    theme(
+        # Title
+        plot.title = element_text(hjust = 0.5, size = 18, face = "bold", margin = margin(b = 15)),
+        
+        # Axes
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 16, margin = margin(t = 0, r = 10, b = 10, l = 0)),
+        axis.text.x = element_text(size = 14, margin = margin(t = 10)),
+        axis.text.y = element_text(size = 14, face = "bold", margin = margin(r = 5)),
+        
+        # Facet strip
+        strip.text = element_text(face = "bold", size = 16),
+
+        # Plot spacing
+        plot.margin = margin(20, 20, 20, 20)
+    )
+
+ggsave(here::here('plots', 'technical-documentation', 'total_util_cap_facet.png'), total_util_cap_facet, width = 10, height = 6)
+                
+```
+
+```{r}
+##### Rooftop Solar #####
+roof_high <- pv_all %>% 
+    filter(county %in% c("SLO", "SB", "V") &
+               technology == "Rooftop PV" &
+               ambition == "High" &
+               occupation %in% c('O&M', 'Construction') &
+               year %in% c(2025:2045))
+
+roof_high_jobs <-roof_high |>
+    group_by(year, occupation, county) |>
+    summarise(n_jobs = sum(n_jobs))
+
+roof_high_jobs$county <- factor(roof_high_jobs$county, levels = c("V", "SLO", "SB"))
+
+# TOTAL TOTAL jobs (direct and indirect and induced)
+total_roof_jobs_facet <- ggplot(roof_high_jobs,
+       aes(
+           x = as.factor(year),
+           y = round(n_jobs, 0),
+           group = occupation
+       )) +
+    geom_col(aes(fill = occupation)) +
+    scale_fill_manual(
+        labels = c("Construction Jobs", "Operations & Maintenance Jobs"),
+        values = c("#3A8398", "#A3BDBE")
+    ) +
+    scale_y_continuous(labels = scales::comma) +
+    scale_x_discrete(breaks = scales::breaks_pretty(n = 2)) +
+    labs(
+        title = "Total Projected Jobs From Rooftop Solar 2025 - 2045",
+        y = "Full-time Equivalent Jobs"
+    ) +
+    theme_minimal(base_size = 14) +
+    theme(
+        # Title
+        plot.title = element_text(hjust = 0.5, size = 18, face = "bold", margin = margin(b = 15)),
+        
+        # Axes
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 16, margin = margin(t = 0, r = 10, b = 10, l = 0)),
+        axis.text.x = element_text(size = 14, margin = margin(t = 10)),
+        axis.text.y = element_text(face = "bold", size = 14, margin = margin(r = 5)),
+        
+        # Legend
+        legend.title = element_blank(),
+        legend.text = element_text(size = 14),
+        legend.position = "bottom",
+        
+        # Facet strip
+        strip.text = element_text(face = "bold", size = 16),
+        
+        # Overall plot margin
+        plot.margin = margin(20, 20, 20, 20)
+    ) +
+    facet_wrap(
+        ~county,
+        scale = "free_y",
+        labeller = labeller(county = c(
+            
+            "V" = "Ventura",
+            "SLO" = "San Luis Obispo",
+            "SB" = "Santa Barbara"
+            
+        ))
+    )
+
+
+ggsave(here::here('plots', 'technical-documentation', 'total_roof_jobs_facet.png'), total_roof_jobs_facet, width = 10, height = 6)
+
+# Capacity
+
+# Summarize capacity and set facet order
+roof_high_cap <- roof_high |>
+    group_by(county, year) |>
+    summarise(cap = total_capacity_mw, .groups = "drop")
+
+roof_high_cap$county <- factor(roof_high_cap$county, levels = c("V", "SLO", "SB"))
+
+# Plot
+total_roof_cap_facet <- ggplot(roof_high_cap,
+       aes(x = as.factor(year), y = cap)) +
+    geom_point(color = "#3A8398", size = 3) +
+    scale_y_continuous(labels = scales::comma) +
+    scale_x_discrete(breaks = scales::breaks_pretty(n = 2)) +
+    labs(
+        title = "Rooftop Solar Total Capacity Projections 2025 - 2045",
+        y = "Capacity (MW)"
+    ) +
+    facet_wrap(~county, scales = "free_y",
+               labeller = labeller(county = c(
+                   "SLO" = "San Luis Obispo",
+                   "SB" = "Santa Barbara",
+                   "V" = "Ventura"
+               ))) +
+    theme_minimal(base_size = 14) +
+    theme(
+        # Title
+        plot.title = element_text(hjust = 0.5, size = 18, face = "bold", margin = margin(b = 15)),
+        
+        # Axes
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 16, margin = margin(t = 0, r = 10, b = 10, l = 0)),
+        axis.text.x = element_text(size = 14, margin = margin(t = 10)),
+        axis.text.y = element_text(size = 14, face = "bold", margin = margin(r = 5)),
+        
+        # Facet strip
+        strip.text = element_text(face = "bold", size = 16),
+
+        # Plot spacing
+        plot.margin = margin(20, 20, 20, 20)
+    )
+
+ggsave(here::here('plots', 'technical-documentation', 'total_roof_cap_facet.png'), total_roof_cap_facet, width = 10, height = 6)
+
+```
+
+```{r}
+##### Floating Offshore Wind #####
+osw_total_jobs <- osw_all |>
+    filter(ambition == "High") |>
+    group_by(year, occupation) |>
+    summarise(n_jobs = sum(n_jobs))
+
+total_osw_jobs <- ggplot(osw_total_jobs,
+       aes(
+           x = as.factor(year),
+           y = round(n_jobs, 0),
+           group = occupation
+       )) +
+    geom_col(aes(fill = occupation)) +
+    scale_fill_manual(
+        labels = c("Construction Jobs", "Operations & Maintenance Jobs"),
+        values = c("#3A8398", "#A3BDBE")
+    ) +
+    scale_y_continuous(labels = scales::comma,
+                       breaks = scales::breaks_pretty(n = 10)) +
+    scale_x_discrete(breaks = scales::breaks_pretty(n = 5)) +
+    labs(title = "Total Projected Jobs From Floating Offshore Wind 2025 - 2045",
+        y = "Full-time Equivalent Jobs"
+    ) +
+     theme_minimal(base_size = 14) +
+    theme(
+        # Title
+        plot.title = element_text(hjust = 0.5, size = 18, face = "bold", margin = margin(b = 15)),
+        
+        # Axes
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 16, margin = margin(t = 0, r = 10, b = 10, l = 0)),
+        axis.text.x = element_text(size = 14, margin = margin(t = 10)),
+        axis.text.y = element_text(size = 14, face = "bold", margin = margin(r = 5)),
+
+        # Plot spacing
+        plot.margin = margin(20, 20, 20, 20),
+        
+        # Legend
+        legend.title = element_blank(),
+        legend.position = "bottom"
+        
+    )
+
+
+ggsave(here::here('plots', 'technical-documentation', 'total_osw_jobs.png'), total_osw_jobs, width = 10, height = 6)
+
+# Capacity 
+
+osw_high_cap <- osw_all |>
+    group_by(county, year) |>
+    summarise(cap = total_capacity_mw, .groups = "drop")
+```
+
+```{r}
+##### Oil Well Capping #####
+
+
+```
+
+
+
+
+
+
 =======
 ## Analysis for Lucas 4/21
 
