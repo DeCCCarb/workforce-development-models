@@ -2426,6 +2426,92 @@ oil_cap_job_plot <- ggplot(oil_capping) +
 ggsave(here::here('plots', 'technical-documentation', 'oil_cap_job_plot.png'), oil_cap_job_plot, width = 10, height = 7)
 ```
 
+## Plots for publics
+
+```{r}
+# Load libraries
+library(showtext)  
+library(sysfonts)
+library(dplyr)
+```
+
+```{r}
+# Combine and sum by year only
+sum_and_label <- function(data, label) {
+  data |>
+    group_by(year) |>
+    summarise(n_jobs = sum(n_jobs)) |>
+    ungroup() |>
+    mutate(source = label)
+}
+
+# Assign light grey to newly added tech, black for the rest
+get_colors <- function(current_sources, new_source) {
+  colors <- rep("#999999", length(current_sources))  # grey for current source
+  names(colors) <- current_sources
+  colors[new_source] <- "#000000"  # black for the newest source
+  return(colors)
+}
+
+# Calculate total direct, indirect, and induced jobs for each tech
+roof_total <- sum_and_label(roof_high_jobs, "Rooftop Solar")
+utility_total <- sum_and_label(utility_high, "Utility Solar")
+osw_total <- sum_and_label(osw_total_jobs, "Offshore Wind")
+
+capping_total <- oil_capping |>
+  group_by(year) |>
+  summarise(n_jobs = sum(total_jobs_created)) |>
+  ungroup() |>
+  mutate(source = "Oil Well Capping")
+
+# Sources per step
+sources1 <- c("Rooftop Solar")
+sources2 <- c("Rooftop Solar", "Utility Solar")
+sources3 <- c("Rooftop Solar", "Utility Solar", "Offshore Wind")
+sources4 <- c("Rooftop Solar", "Utility Solar", "Offshore Wind", "Oil Well Capping")
+
+# Load League Spartan font to match presentation
+font_add_google("League Spartan", "league")
+showtext_auto()
+showtext_opts(dpi = 300)
+
+# Function to make plots
+make_total_plot <- function(data, current_sources, new_source) {
+  # Order so that new source is on the top of the stack, then reverse for ggplot stacking
+  ordered_sources <- rev(c(setdiff(current_sources, new_source), new_source))
+  data$source <- factor(data$source, levels = ordered_sources)
+  
+  ggplot(data, aes(x = as.factor(year), y = round(n_jobs), fill = source)) +
+    geom_col() +
+    scale_fill_manual(values = get_colors(current_sources, new_source)) +
+    scale_y_continuous(limits = c(0,22500),
+                       breaks = seq(0, 20000, by = 5000),
+                       labels = scales::comma) +
+    scale_x_discrete(breaks = seq(2025, 2045, by = 5)) +
+    labs(x = NULL, y = "Full-Time Job Years") +
+    theme_minimal(base_family = "league", base_size = 24) +
+    theme(
+      plot.title = element_blank(),
+      axis.text.x = element_text(),
+      axis.text.y = element_text(face = "bold"),
+           axis.title.y = element_blank(),
+      plot.margin = margin(20, 20, 20, 20),
+      legend.position = 'none'
+    )
+}
+
+p1 <- make_total_plot(step1, sources1, "Rooftop Solar")        # Just rooftop
+p2 <- make_total_plot(step2, sources2, "Utility Solar")        # Utility on top
+p3 <- make_total_plot(step3, sources3, "Offshore Wind")        # Offshore Wind on top
+p4 <- make_total_plot(step4, sources4, "Oil Well Capping")     # Capping on top
+
+
+# Save plots
+ggsave(here::here('plots', 'final-presentation', 'roof.png'), p1, width = 8, height = 8, dpi = 300)
+ggsave(here::here('plots', 'final-presentation', 'roof_util.png'), p2, width = 8, height = 8, dpi = 300)
+ggsave(here::here('plots', 'final-presentation', 'roof_util_osw.png'), p3, width = 8, height = 8, dpi = 300)
+ggsave(here::here('plots', 'final-presentation', 'roof_util_osw_cap.png'), p4, width = 8, height = 8, dpi = 300)
+```
 
 
 
