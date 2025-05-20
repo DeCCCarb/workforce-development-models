@@ -253,9 +253,9 @@ sb_roof_pv_om <- calculate_pv_om_jobs(
     ambition = "High",
     initial_capacity = 242.0159119, 
     final_capacity = 1293.941196, 
-    direct_jobs = ((0.28 * 0.4) + (0.18 * 0.6)), 
-    indirect_jobs = ((0.04 * 0.4) + (0.02 * 0.6)), 
-    induced_jobs = ((0.02 * 0.4) + (0.01 * 0.6))
+    direct_jobs = ((0.28 * 0.4) + (0.18 * 0.6)), # 0.22
+    indirect_jobs = ((0.04 * 0.4) + (0.02 * 0.6)), # 0.028
+    induced_jobs = ((0.02 * 0.4) + (0.01 * 0.6)) # 0.014
 )
 
 # Construction Rooftop PV
@@ -267,9 +267,9 @@ sb_roof_pv_const <- calculate_pv_construction_jobs(
     ambition = "High",
     initial_capacity = 242.0159119,
     final_capacity = 1293.941196,
-    direct_jobs = ((8.04 * 0.4) + (4.12 * 0.6)),
-    indirect_jobs = ((5.18 * 0.4) + (3.26 * 0.6)),
-    induced_jobs = ((2.71 * 0.4) + (1.61 * 0.6))
+    direct_jobs = ((8.04 * 0.4) + (4.12 * 0.6)), # 5.688
+    indirect_jobs = ((5.18 * 0.4) + (3.26 * 0.6)), # 4.028
+    induced_jobs = ((2.71 * 0.4) + (1.61 * 0.6)) # 2.05
 )
 
 # Low ambition ----
@@ -372,9 +372,9 @@ slo_roof_pv_om <- calculate_pv_om_jobs(
     ambition = "High",
     initial_capacity = 344.8405982, 
     final_capacity = 1843.694708, 
-    direct_jobs = ((0.28 * 0.4) + (0.18 * 0.6)), 
-    indirect_jobs = ((0.04 * 0.4) + (0.02 * 0.6)), 
-    induced_jobs = ((0.02 * 0.4) + (0.01 * 0.6))
+    direct_jobs = ((0.28 * 0.4) + (0.18 * 0.6)), # 0.22
+    indirect_jobs = ((0.04 * 0.4) + (0.02 * 0.6)), # 0.028
+    induced_jobs = ((0.02 * 0.4) + (0.01 * 0.6)) # 0.014
 )
 
 # Construction Rooftop PV
@@ -386,9 +386,9 @@ slo_roof_pv_const <- calculate_pv_construction_jobs(
     ambition = "High",
     initial_capacity = 344.8405982,
     final_capacity = 1843.694708,
-    direct_jobs = ((8.52 * 0.4) + (4.39 * 0.6)),
-    indirect_jobs = ((5.89 * 0.4) + (3.68 * 0.6)),
-    induced_jobs = ((2.54 * 0.4) + (1.49 * 0.6))
+    direct_jobs = ((8.52 * 0.4) + (4.39 * 0.6)), # 6.042
+    indirect_jobs = ((5.89 * 0.4) + (3.68 * 0.6)), # 4.564
+    induced_jobs = ((2.54 * 0.4) + (1.49 * 0.6)) # 1.91
 )
 
 # Low ambition ----
@@ -488,9 +488,9 @@ ventura_roof_pv_om <- calculate_pv_om_jobs(
     ambition = "High",
     initial_capacity = 424.1984954, 
     final_capacity = 3026.377541, 
-    direct_jobs = ((0.28 * 0.4) + (0.18 * 0.6)), 
-    indirect_jobs = ((0.04 * 0.4) + (0.02 * 0.6)), 
-    induced_jobs = ((0.02 * 0.4) + (0.01 * 0.6))
+    direct_jobs = ((0.28 * 0.4) + (0.18 * 0.6)), # 0.22
+    indirect_jobs = ((0.04 * 0.4) + (0.02 * 0.6)), # 0.028
+    induced_jobs = ((0.02 * 0.4) + (0.01 * 0.6)) # 0.014
 )
 
 # Construction Rooftop PV
@@ -502,9 +502,9 @@ ventura_roof_pv_const <- calculate_pv_construction_jobs(
     ambition = "High",
     initial_capacity = 424.1984954,
     final_capacity = 3026.377541,
-    direct_jobs = ((8.33 * 0.4) + (4.29 * 0.6)),
-    indirect_jobs = ((5.11 * 0.4) + (3.2 * 0.6)),
-    induced_jobs = ((2.68 * 0.4) + (1.59 * 0.6))
+    direct_jobs = ((8.33 * 0.4) + (4.29 * 0.6)), # 5.906
+    indirect_jobs = ((5.11 * 0.4) + (3.2 * 0.6)), # 3.964
+    induced_jobs = ((2.68 * 0.4) + (1.59 * 0.6)) # 2.026
 )
 
 # Low ambition ----
@@ -1887,7 +1887,6 @@ pv_2045_low_slo_plot <- ggplot(pv_2045_low_slo, aes(x = year, y = n_jobs, group 
 #ggsave('plots/pv_high_advocacy.png', pv_2045_high_plot, width = 12, height = 10)
 ```
 
-<<<<<<< HEAD
 Specific number of job results - Utility Solar
 ```{r}
 rooftop_jobs_sb <- pv_all %>% 
@@ -2246,11 +2245,6 @@ osw_high_cap <- osw_all |>
 ```
 
 
-
-
-
-
-=======
 ## Analysis for Lucas 4/21
 
 ```{r}
@@ -2292,7 +2286,34 @@ c_tot_r_pv <- sb_direct_high |>
 c_tot_r_pv = round(sum(c_tot_r_pv$n_jobs), 0)
 ```
 
+## Analysis for td results report construction section (O&M filtering was done in console)
 
+```{r}
+# ran each variation for high and low ambition, and direct, indirect, and induced jobs
+utility_constr_sum <- pv_all %>% 
+    filter(county == 'SB' &
+               technology == 'Utility PV' &
+               ambition == 'Low' &
+               type == 'direct' &
+               occupation == 'Construction') %>% 
+    mutate(total_jobs = sum(n_jobs))
+```
 
+```{r}
+roof_constr_sum <- pv_all %>% 
+    filter(county == 'SB' &
+               technology == 'Rooftop PV' &
+               ambition == 'Low' &
+               type == 'direct' &
+               occupation == 'Construction') %>% 
+    mutate(total_jobs = sum(n_jobs))
+```
 
->>>>>>> c249b37262d16c703380dfd8cb3c421ea62fda55
+```{r}
+osw_constr_sum <- osw_all %>% 
+    filter(ambition == 'Low' &
+               type == 'direct' &
+               occupation == 'Construction') %>% 
+    mutate(total_jobs = sum(n_jobs))
+```
+
