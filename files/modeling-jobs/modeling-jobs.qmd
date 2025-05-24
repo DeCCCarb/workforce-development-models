@@ -2509,6 +2509,29 @@ ggsave(here::here('plots', 'final-presentation', 'roof.png'), p1, width = 8, hei
 ggsave(here::here('plots', 'final-presentation', 'roof_util.png'), p2, width = 8, height = 8, dpi = 300)
 ggsave(here::here('plots', 'final-presentation', 'roof_util_osw.png'), p3, width = 8, height = 8, dpi = 300)
 ggsave(here::here('plots', 'final-presentation', 'roof_util_osw_cap.png'), p4, width = 8, height = 8, dpi = 300)
+
+
+# Blank plot
+blank_data <- data.frame(year = factor(2025:2045), n_jobs = 0)
+
+p0 <- ggplot(blank_data, aes(x = year, y = n_jobs)) +
+  geom_blank() +
+  scale_y_continuous(limits = c(0, 22500),
+                     breaks = seq(0, 20000, by = 5000),
+                     labels = scales::comma) +
+  scale_x_discrete(breaks = seq(2025, 2045, by = 5)) +
+  labs(x = NULL, y = "Full-Time Job Years") +
+  theme_minimal(base_family = "league", base_size = 24) +
+  theme(
+    plot.title = element_blank(),
+    axis.text.x = element_text(),
+    axis.text.y = element_text(face = "bold"),
+    axis.title.y = element_blank(),
+    plot.margin = margin(20, 20, 20, 20),
+    legend.position = 'none'
+  )
+
+ggsave(here::here('plots', 'final-presentation', 'blank.png'), p0, width = 8, height = 8, dpi = 300)
 ```
 
 
